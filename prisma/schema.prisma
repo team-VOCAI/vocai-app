@@ -13,3 +13,74 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  userId     Int      @id @default(autoincrement())
+  loginId    String   @unique
+  password   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+  profile    Profile?
+
+  @@map("users")
+}
+
+model Profile {
+  profileId  Int      @id @default(autoincrement())
+  userId     Int      @unique
+  nickName   String   @unique
+  name       String
+  phoneNum   String
+  email      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+  user       User     @relation(fields: [userId], references: [userId])
+  posts      Post[]
+  comments   Comment[]
+
+  @@map("profiles")
+}
+
+model Board {
+  boardId   Int     @id @default(autoincrement())
+  name      String
+  isActive  Boolean @default(true)
+  posts     Post[]
+
+  @@map("boards")
+}
+
+model Post {
+  postId     Int      @id @default(autoincrement())
+  profileId  Int
+  boardId    Int
+  nickName   String
+  title      String
+  content    String
+  view       Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+  profile    Profile  @relation(fields: [profileId], references: [profileId])
+  board      Board    @relation(fields: [boardId], references: [boardId])
+  comments   Comment[]
+
+  @@map("posts")
+}
+
+model Comment {
+  commentId  Int      @id @default(autoincrement())
+  postId     Int
+  profileId  Int
+  nickName   String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+  post       Post     @relation(fields: [postId], references: [postId])
+  profile    Profile  @relation(fields: [profileId], references: [profileId])
+
+  @@map("comments")
+}
