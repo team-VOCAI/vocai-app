@@ -1,0 +1,23 @@
+name: PR to Discord
+
+on:
+  pull_request:
+    types: [opened, reopened, edited]
+    branches:
+      - main
+      - dev
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send PR info to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          pr_user="${{ github.event.pull_request.user.login }}"
+          pr_title="${{ github.event.pull_request.title }}"
+          pr_body="${{ github.event.pull_request.body }}"
+          pr_url="${{ github.event.pull_request.html_url }}"
+          json="{\n  \"content\": null,\n  \"embeds\": [{\n    \"title\": \"🔔 Pull Request 알림\",\n    \"url\": \"$pr_url\",\n    \"fields\": [\n      {\"name\": \"작성자\", \"value\": \"$pr_user\", \"inline\": true},\n      {\"name\": \"제목\", \"value\": \"$pr_title\", \"inline\": false},\n      {\"name\": \"설명\", \"value\": \"$pr_body\", \"inline\": false}\n    ]\n  }]\n}"
+          curl -H "Content-Type: application/json" -X POST -d "$json" $DISCORD_WEBHOOK
