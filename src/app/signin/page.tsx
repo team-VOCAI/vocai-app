@@ -32,30 +32,40 @@ export default function SignInPage() {
                   aria-label='비밀번호'
                 />
               </div>
+              {/* 로그인 버튼 */}
               <button
                 type='submit'
-                className='h-12 rounded-lg bg-[#2563EB] text-white font-bold text-base shadow hover:bg-[#1D4ED8] transition-colors'
+                className='w-full py-2 mt-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition-colors'
               >
                 로그인
               </button>
             </form>
-            <div className='text-center mt-4 text-sm text-[#6B7280]'>
-              회원이 아니시라면?{' '}
-              <a
-                href='/signup'
-                className='font-bold text-[#2563EB] underline hover:text-[#1D4ED8] transition'
-              >
+            {/* 회원가입 링크 */}
+            <p className='mt-4 text-center text-sm text-gray-600'>
+              계정이 없으신가요?{' '}
+              <a href='/signup' className='text-blue-600 hover:underline'>
                 회원가입
               </a>
-            </div>
-            <div className='my-6 border-t border-[#E5E7EB]' />
+            </p>
+            {/* 구분선 */}
+            <div className='my-6 border-t border-gray-200' />
+            {/* Google 로그인 버튼 (디자인 시스템 및 가이드라인 적용) */}
             <button
               type='button'
-              className='flex items-center justify-center w-full h-12 border border-[#D1D5DB] rounded-lg bg-white hover:bg-[#F3F4F6] transition-colors shadow-sm'
-              aria-label='Google로 로그인'
+              // 실제 구글 로그인 연동 시 onClick에 signIn('google') 등 연결
+              className='flex items-center justify-center w-full border border-[#D1D5DB] rounded-lg py-2 px-4 shadow-sm bg-white hover:bg-[#F3F4F6] transition focus:outline-none focus:ring-2 focus:ring-blue-500'
+              style={{
+                fontFamily: 'Roboto, Arial, sans-serif',
+                fontWeight: 500,
+              }}
             >
-              <img src='/google.svg' alt='Google' className='w-6 h-6 mr-2' />
-              <span className='font-medium text-[#1F2937]'>
+              <img
+                src='https://developers.google.com/identity/images/g-logo.png'
+                alt='Google Logo'
+                className='w-5 h-5 mr-2'
+              />
+              {/* 텍스트 색상을 더 진하게(Tailwind gray-800, #1F2937) */}
+              <span className='text-sm font-medium text-[#1F2937]'>
                 Google로 로그인
               </span>
             </button>

@@ -29,7 +29,7 @@ export default function Navbar() {
         </div>
         <div className='flex items-center gap-2'>
           <a
-            href='#'
+            href='/signin'
             className='text-base font-semibold text-[#2563EB] px-4 py-2 rounded-lg border border-[#2563EB] bg-white hover:bg-[#2563EB] hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#2563EB]'
           >
             로그인/회원가입
