@@ -13,23 +13,23 @@ export default function SignUpPage() {
               회원가입
             </h1>
             <form className='flex flex-col gap-5'>
-              {/* 아이디 */}
+              {/* 이메일 */}
               <div>
                 <label
-                  htmlFor='id'
+                  htmlFor='email'
                   className='block mb-2 text-sm font-medium text-[#374151]'
                 >
-                  아이디
+                  이메일
                 </label>
                 <div className='flex gap-2'>
                   <input
-                    id='id'
-                    name='id'
-                    type='text'
-                    placeholder='아이디 입력'
+                    id='email'
+                    name='email'
+                    type='email'
+                    placeholder='이메일 입력'
                     className='flex-1 h-12 px-4 rounded-lg border border-[#D1D5DB] bg-[#F9FAFB] focus:outline-none focus:ring-2 focus:ring-[#2563EB] font-medium text-base placeholder:text-gray-400 transition'
-                    autoComplete='username'
-                    aria-label='아이디'
+                    autoComplete='email'
+                    aria-label='이메일'
                   />
                   <button
                     type='button'
@@ -159,27 +159,6 @@ export default function SignUpPage() {
                   >
                     인증 확인
                   </button>
-                </div>
-              </div>
-
-              {/* 이메일 */}
-              <div>
-                <label
-                  htmlFor='email'
-                  className='block mb-2 text-sm font-medium text-[#374151]'
-                >
-                  이메일
-                </label>
-                <div className='flex gap-2'>
-                  <input
-                    id='email'
-                    name='email'
-                    type='email'
-                    placeholder='이메일 입력'
-                    className='flex-1 h-12 px-4 rounded-lg border border-[#D1D5DB] bg-[#F9FAFB] focus:outline-none focus:ring-2 focus:ring-[#2563EB] font-medium text-base placeholder:text-gray-400 transition'
-                    autoComplete='email'
-                    aria-label='이메일'
-                  />
                 </div>
               </div>
 
