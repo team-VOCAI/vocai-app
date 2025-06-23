@@ -15,6 +15,11 @@ export async function GET(
   if (!post || post.deletedAt) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
+  
+  await prisma.post.update({
+    where: { postId: Number(postId) },
+    data: { view: post.view + 1 },
+  });
 
   return NextResponse.json(post);
 }
