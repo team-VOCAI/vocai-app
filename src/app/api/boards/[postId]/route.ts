@@ -5,7 +5,7 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ postId: string }> }
 ) {
-  const { postId } = await context.params; 
+  const { postId } = await context.params;
 
   const post = await prisma.post.findUnique({
     where: { postId: Number(postId) },
@@ -15,11 +15,6 @@ export async function GET(
   if (!post || post.deletedAt) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
-  
-  await prisma.post.update({
-    where: { postId: Number(postId) },
-    data: { view: post.view + 1 },
-  });
 
   return NextResponse.json(post);
 }
@@ -28,7 +23,7 @@ export async function PUT(
   req: NextRequest,
   context: { params: Promise<{ postId: string }> }
 ) {
-  const { postId } = await context.params; 
+  const { postId } = await context.params;
 
   const { title, content } = await req.json();
 
@@ -44,7 +39,7 @@ export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ postId: string }> }
 ) {
-  const { postId } = await context.params; 
+  const { postId } = await context.params;
 
   const deleted = await prisma.post.update({
     where: { postId: Number(postId) },
