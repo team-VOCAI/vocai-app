@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(req: NextRequest) {
-  const boardId = Number(req.nextUrl.searchParams.get("boardId"));
-  if (isNaN(boardId)) {
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ boardId: string }> }
+) {
+  const { boardId } = await context.params;
+  const numBoardId = Number(boardId);
+  if (isNaN(numBoardId)) {
     return NextResponse.json(
       { message: "boardId가 필요합니다" },
       { status: 400 }
@@ -12,14 +16,14 @@ export async function GET(req: NextRequest) {
 
   const posts = await prisma.post.findMany({
     where: {
-      boardId,
+      boardId: numBoardId,
       deletedAt: null,
     },
     orderBy: { createdAt: "desc" },
     include: { profile: true, board: true },
   });
 
-  return NextResponse.json(posts);
+  return NextResponse.json({ posts });
 }
 
 export async function POST(req: NextRequest) {
