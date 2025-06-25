@@ -2,22 +2,50 @@
 @import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* VOCAI Design System Colors */
+  /* Primary Colors */
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --secondary: #10b981;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Accent Colors */
+  --accent: #f59e0b;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Gray Scale */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-600: #4b5563;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Functional Colors */
+  --success: #059669;
+  --warning: #d97706;
+  --error: #dc2626;
+  --info: #3b82f6;
+
+  /* Form Elements */
+  --input-text: var(--gray-800);
+  --input-bg: var(--gray-50);
+  --input-border: var(--gray-300);
+  --input-placeholder: var(--gray-400);
+  --input-focus-ring: var(--primary);
+
+  /* Text Colors by Usage */
+  --text-primary: var(--gray-800); /* 메인 제목, 중요한 텍스트 */
+  --text-secondary: var(--gray-600); /* 일반 텍스트, 메뉴, 내비게이션 */
+  --text-muted: var(--gray-400); /* 보조 텍스트, 설명글 */
+  --text-accent: var(--primary); /* 강조 텍스트, 링크, 브랜드 */
+  --text-light: var(--gray-300); /* 매우 연한 텍스트 */
+  --text-inverse: #ffffff; /* 다크 배경 위의 텍스트 */
+  --text-error: var(--error); /* 에러 메시지 텍스트 */
+
+  /* Button Disabled States */
+  --button-disabled-bg: var(--gray-300); /* 비활성화된 버튼 배경 */
+  --button-disabled-text: var(--gray-400); /* 비활성화된 버튼 텍스트 */
+  --button-disabled-border: var(--gray-300); /* 비활성화된 버튼 테두리 */
 }
 
 html {
@@ -26,7 +54,32 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: #ffffff;
+  color: #171717;
   font-family: inherit;
+}
+
+/* Form Elements Base Styles */
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='tel'],
+input[type='number'],
+textarea {
+  color: var(--input-text);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--input-placeholder);
+}
+
+/* 브라우저 자동완성 스타일 오버라이드 */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--input-bg) inset !important;
+  -webkit-text-fill-color: var(--input-text) !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
