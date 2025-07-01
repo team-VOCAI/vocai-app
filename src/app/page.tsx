@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import ContainerX from '@/components/ContainerX';
 import Footer from '@/components/Footer';
-import UserReviewCarousel from '@/components/UserReviewCarousel';
+import { UserReviewCarousel } from '@/features/home/components';
 import {
   HiLightBulb,
   HiVideoCamera,
