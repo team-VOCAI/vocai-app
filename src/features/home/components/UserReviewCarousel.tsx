@@ -97,7 +97,7 @@ export default function UserReviewCarousel() {
           {reviews.map((review, index) => (
             <div
               key={index}
-              className='flex-[0_0_100%] min-w-0 p-2 md:flex-[0_0_50%] lg:flex-[0_0_25%]'
+              className='flex-[0_0_100%] min-w-0 p-2 md:flex-[0_0_50%] lg:flex-[0_0_25%] min-h-[270px]'
             >
               <div className='bg-white/10 backdrop-blur-lg rounded-3xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:transform hover:-translate-y-2 h-full my-2'>
                 <div className='mb-4'>
@@ -125,7 +125,7 @@ export default function UserReviewCarousel() {
 
       {/* 화살표 버튼 - 무한 루프이므로 항상 양쪽 모두 표시 */}
       <button
-        className='absolute -left-16 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-full p-3 transition-all duration-300 border border-white/30'
+        className='absolute -left-5 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-full p-3 transition-all duration-300 border border-white/30'
         onClick={scrollPrev}
         aria-label='이전 후기 보기'
       >
@@ -133,7 +133,7 @@ export default function UserReviewCarousel() {
       </button>
 
       <button
-        className='absolute -right-16 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-full p-3 transition-all duration-300 border border-white/30'
+        className='absolute -right-5 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-full p-3 transition-all duration-300 border border-white/30'
         onClick={scrollNext}
         aria-label='다음 후기 보기'
       >
