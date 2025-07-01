@@ -26,11 +26,18 @@ export async function GET(
   return NextResponse.json({ posts });
 }
 
-export async function POST(req: NextRequest) {
-  const { title, content, boardId } = await req.json();
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ boardId: string }> }
+) {
+  const { title, content } = await req.json();
+  const { boardId } = await context.params;
+  const numBoardId = Number(boardId);
 
-  const profile = await prisma.profile.findFirst(); // 테스트용 임시 사용자
-  const board = await prisma.board.findUnique({ where: { boardId } });
+  const profile = await prisma.profile.findFirst(); // 테스트용 임시 사용자 나중에 JWT에서 추출
+  const board = await prisma.board.findUnique({
+    where: { boardId: numBoardId },
+  });
 
   if (!profile || !board) {
     return NextResponse.json(
@@ -43,7 +50,7 @@ export async function POST(req: NextRequest) {
     data: {
       title,
       content,
-      boardId,
+      boardId: numBoardId,
       profileId: profile.profileId,
       nickName: profile.nickName,
     },
