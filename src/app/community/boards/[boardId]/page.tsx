@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, use } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { CommunitySidebar } from '@/features/community/components';
@@ -14,9 +14,9 @@ import {
 import { formatCount, formatDate } from '@/lib/utils';
 
 interface BoardPageProps {
-  params: {
+  params: Promise<{
     boardId: string;
-  };
+  }>;
 }
 
 // 카테고리 정보 매핑
@@ -348,7 +348,7 @@ const boardInfo: Record<string, { name: string; description: string }> = {
 };
 
 export default function BoardPage({ params }: BoardPageProps) {
-  const { boardId } = params;
+  const { boardId } = use(params);
   const board = boardInfo[boardId];
   const categoryInfo = getCategoryInfo(boardId);
 
