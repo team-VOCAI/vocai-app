@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getProfileFromRequest } from "@/lib/getProfile";
+
 
 export async function GET(
   req: NextRequest,
@@ -26,15 +28,31 @@ export async function GET(
   return NextResponse.json({ posts });
 }
 
-export async function POST(req: NextRequest) {
-  const { title, content, boardId } = await req.json();
 
-  const profile = await prisma.profile.findFirst(); // 테스트용 임시 사용자
-  const board = await prisma.board.findUnique({ where: { boardId } });
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ boardId: string }> }
+) {
+  const profile = await getProfileFromRequest(req);
 
-  if (!profile || !board) {
+  if (!profile) {
     return NextResponse.json(
-      { message: "profile 또는 board가 존재하지 않습니다." },
+      { message: "인증되지 않았거나 프로필을 찾을 수 없습니다." },
+      { status: 401 }
+    );
+  }
+
+  const { title, content } = await req.json();
+  const { boardId } = await context.params;
+  const numBoardId = Number(boardId);
+
+  const board = await prisma.board.findUnique({
+    where: { boardId: numBoardId },
+  });
+
+  if (!board) {
+    return NextResponse.json(
+      { message: "게시판이 존재하지 않습니다." },
       { status: 400 }
     );
   }
@@ -43,7 +61,7 @@ export async function POST(req: NextRequest) {
     data: {
       title,
       content,
-      boardId,
+      boardId: numBoardId,
       profileId: profile.profileId,
       nickName: profile.nickName,
     },

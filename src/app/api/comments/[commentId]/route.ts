@@ -1,6 +1,7 @@
 // src/app/api/comments/[commentId]/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { getProfileFromRequest } from "@/lib/getProfile";
 
 export async function GET(
   req: NextRequest,
@@ -27,6 +28,19 @@ export async function PUT(
   const { commentId } = await context.params;
   const { content } = await req.json();
 
+  const profile = await getProfileFromRequest(req);
+  if (!profile) {
+    return NextResponse.json({ error: "인증 실패" }, { status: 401 });
+  }
+
+  const comment = await prisma.comment.findUnique({
+    where: { commentId: Number(commentId) },
+  });
+
+  if (!comment || comment.profileId !== profile.profileId) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
   const updated = await prisma.comment.update({
     where: { commentId: Number(commentId) },
     data: { content },
@@ -40,6 +54,19 @@ export async function DELETE(
   context: { params: Promise<{ commentId: string }> }
 ) {
   const { commentId } = await context.params;
+
+  const profile = await getProfileFromRequest(req);
+  if (!profile) {
+    return NextResponse.json({ error: "인증 실패" }, { status: 401 });
+  }
+
+  const comment = await prisma.comment.findUnique({
+    where: { commentId: Number(commentId) },
+  });
+
+  if (!comment || comment.profileId !== profile.profileId) {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
 
   const deleted = await prisma.comment.update({
     where: { commentId: Number(commentId) },
