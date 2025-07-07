@@ -1,0 +1,33 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+export async function POST(req: Request) {
+  const { email, password } = await req.json();
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return NextResponse.json({ error: '존재하지 않는 계정입니다.' }, { status: 401 });
+  }
+
+  const isValid = await bcrypt.compare(password, user.password);
+  if (!isValid) {
+    return NextResponse.json({ error: '비밀번호가 일치하지 않습니다.' }, { status: 401 });
+  }
+
+  // JWT 토큰 발급
+  const token = jwt.sign(
+    { userId: user.id },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  // 토큰을 쿠키에 저장 (HttpOnly)
+  const response = NextResponse.json({ message: '로그인 성공', token });
+  response.cookies.set('token', token, { httpOnly: true, path: '/' });
+
+  return response;
+}
