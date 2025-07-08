@@ -95,7 +95,7 @@ model MockInterviewRecord {
   interviewId  Int                  @id @default(autoincrement())
   sessionId    Int
   question     String
-  answerText   String
+  answerText   String?
   summary      String?
   feedback     String?
   createdAt    DateTime            @default(now())
