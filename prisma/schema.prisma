@@ -44,29 +44,38 @@ model Profile {
 }
 
 model Board {
-  boardId   Int     @id @default(autoincrement())
-  name      String
-  isActive  Boolean @default(true)
-  posts     Post[]
+  boardId     Int     @id @default(autoincrement())
+  name        String
+  description String?
+  isActive    Boolean @default(true)
+  posts       Post[]
 
   @@map("boards")
 }
 
 model Post {
-  postId     Int      @id @default(autoincrement())
-  profileId  Int
-  boardId    Int
-  nickName   String
-  title      String
-  content    String
-  view       Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  deletedAt  DateTime?
-  profile    Profile  @relation(fields: [profileId], references: [profileId])
-  board      Board    @relation(fields: [boardId], references: [boardId])
-  comments   Comment[]
+  postId      Int      @id @default(autoincrement())
+  profileId   Int
+  boardId     Int
+  nickName    String
+  title       String
+  content     String
+  view        Int      @default(0)
+  // 메타정보 필드 추가
+  company     String?  // 기업명 (선택사항)
+  jobCategory String?  // 직무 카테고리
+  tags        String?  // 태그 (쉼표로 구분)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  profile     Profile  @relation(fields: [profileId], references: [profileId])
+  board       Board    @relation(fields: [boardId], references: [boardId])
+  comments    Comment[]
+  attachments Attachment[]
 
+  // 검색 성능을 위한 인덱스
+  @@index([company])
+  @@index([jobCategory])
   @@map("posts")
 }
 
@@ -83,4 +92,17 @@ model Comment {
   profile    Profile  @relation(fields: [profileId], references: [profileId])
 
   @@map("comments")
+}
+
+model Attachment {
+  attachmentId Int      @id @default(autoincrement())
+  postId       Int
+  fileName     String
+  fileSize     Int
+  fileType     String
+  fileData     Bytes    // PostgreSQL BYTEA 타입
+  createdAt    DateTime @default(now())
+  post         Post     @relation(fields: [postId], references: [postId])
+
+  @@map("attachments")
 }
