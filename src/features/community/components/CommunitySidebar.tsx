@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatCount } from '@/lib/utils';
+import { boardAPI } from '@/lib/api';
 
 interface Board {
   id: string;
@@ -20,33 +21,50 @@ interface CommunitySidebarProps {
   selectedBoardId?: string;
 }
 
-// 실제 게시판별 게시글 수 데이터
-const getActualPostCount = (boardId: string): number => {
-  switch (boardId) {
-    case '1': // 기업별 취업 정보
-      return 25; // 실제 더미 데이터 수
-    case '2': // 면접 후기
-      return 0;
-    case '3': // 취업 질문
-      return 0;
-    case '4': // 취업 자료 공유
-      return 0;
-    case '5': // 잡담방
-      return 0;
-    case '6': // 고민상담
-      return 0;
-    case '7': // 스터디 목록
-      return 0;
-    case '8': // 스터디 후기
-      return 0;
-    default:
-      return 0;
-  }
-};
+interface BoardStat {
+  boardId: number;
+  name: string;
+  postCount: number;
+}
+
+interface StatsResponse {
+  stats: BoardStat[];
+}
 
 export default function CommunitySidebar({
   selectedBoardId = '1',
 }: CommunitySidebarProps) {
+  const [boardStats, setBoardStats] = useState<BoardStat[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 게시판 통계 데이터 로드
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const response = await boardAPI.getStats();
+        const statsData = (response.data as StatsResponse).stats || [];
+        setBoardStats(statsData);
+        console.log('📊 사이드바 통계 데이터 로드:', statsData);
+      } catch (error) {
+        console.error('❌ 사이드바 통계 로드 에러:', error);
+        // 에러 시 기본값 사용
+        setBoardStats([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  // 게시판 ID로 게시글 수 찾기
+  const getPostCount = (boardId: string): number => {
+    if (loading) return 0;
+    const stat = boardStats.find((s) => s.boardId === parseInt(boardId));
+    return stat ? stat.postCount : 0;
+  };
+
   const categories: Category[] = [
     {
       title: '취업 정보',
@@ -55,25 +73,25 @@ export default function CommunitySidebar({
           id: '1',
           name: '기업별 취업 정보',
           description: '기업별 채용 정보와 다양한 정보',
-          postCount: getActualPostCount('1'),
+          postCount: getPostCount('1'),
         },
         {
           id: '2',
           name: '면접 후기',
           description: '실제 면접 경험담과 후기',
-          postCount: getActualPostCount('2'),
+          postCount: getPostCount('2'),
         },
         {
           id: '3',
           name: '취업 질문',
           description: '취업 관련 궁금한 점 Q&A',
-          postCount: getActualPostCount('3'),
+          postCount: getPostCount('3'),
         },
         {
           id: '4',
           name: '취업 자료 공유',
           description: '이력서, 자소서 등 취업 자료',
-          postCount: getActualPostCount('4'),
+          postCount: getPostCount('4'),
         },
       ],
     },
@@ -84,13 +102,13 @@ export default function CommunitySidebar({
           id: '5',
           name: '잡담방',
           description: '자유롭게 이야기하는 공간',
-          postCount: getActualPostCount('5'),
+          postCount: getPostCount('5'),
         },
         {
           id: '6',
           name: '고민상담',
           description: '진로와 고민을 나누는 공간',
-          postCount: getActualPostCount('6'),
+          postCount: getPostCount('6'),
         },
       ],
     },
@@ -101,13 +119,13 @@ export default function CommunitySidebar({
           id: '7',
           name: '스터디 목록',
           description: '스터디 그룹 모집 및 참여',
-          postCount: getActualPostCount('7'),
+          postCount: getPostCount('7'),
         },
         {
           id: '8',
           name: '스터디 후기',
           description: '스터디 경험담과 후기',
-          postCount: getActualPostCount('8'),
+          postCount: getPostCount('8'),
         },
       ],
     },
@@ -190,7 +208,7 @@ export default function CommunitySidebar({
                                 : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
                             }`}
                           >
-                            {formatCount(board.postCount)}
+                            {loading ? '...' : formatCount(board.postCount)}
                           </span>
                         </div>
                       </div>

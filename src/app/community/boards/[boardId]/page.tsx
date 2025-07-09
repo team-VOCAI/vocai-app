@@ -1,22 +1,55 @@
 'use client';
 
-import React, { useState, useMemo, use } from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { CommunitySidebar } from '@/features/community/components';
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import {
   HiPlus,
   HiChevronLeft,
   HiChevronRight,
   HiDocumentText,
+  HiPaperClip,
 } from 'react-icons/hi2';
-import { formatCount, formatDate } from '@/lib/utils';
+import Navbar from '@/components/Navbar';
+import { CommunitySidebar } from '@/features/community/components';
+import { boardAPI } from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 
 interface BoardPageProps {
-  params: Promise<{
-    boardId: string;
+  params: Promise<{ boardId: string }>;
+}
+
+// 게시글 타입 정의
+interface Post {
+  postId: number;
+  title: string;
+  content: string;
+  nickName: string;
+  createdAt: string;
+  updatedAt: string;
+  views: number;
+  company?: string | null;
+  jobCategory?: string | null;
+  tags?: string | null;
+  profile: {
+    profileId: number;
+    nickName: string;
+  };
+  board: {
+    boardId: number;
+    name: string;
+  };
+  attachments: Array<{
+    attachmentId: number;
+    fileName: string;
+    fileSize: number;
+    fileType: string;
+    createdAt: string;
   }>;
+}
+
+// API 응답 타입 정의
+interface PostsResponse {
+  posts: Post[];
 }
 
 // 카테고리 정보 매핑
@@ -30,285 +63,6 @@ const getCategoryInfo = (boardId: string) => {
   }
   return null;
 };
-
-// 더미 게시글 데이터 (기업별 취업 정보)
-const dummyPosts = [
-  {
-    id: 1,
-    title: '네이버 프론트엔드 개발자 채용 정보 및 면접 질문 유형',
-    author: '개발자A',
-    date: '2024-01-15T14:30:00',
-    views: 245,
-    company: '네이버',
-    jobCategory: 'FE',
-    commentCount: 2000,
-    likeCount: 45,
-  },
-  {
-    id: 2,
-    title: '카카오 백엔드 개발자 기술스택 요구사항 정리',
-    author: '코딩맨',
-    date: '2024-01-14T16:45:00',
-    views: 189,
-    company: '카카오',
-    jobCategory: 'BE',
-    commentCount: 18,
-    likeCount: 32,
-  },
-  {
-    id: 3,
-    title: '삼성전자 SDS 신입 개발자 면접 질문 패턴 분석',
-    author: '취준생123',
-    date: '2024-01-13T09:20:00',
-    views: 312,
-    company: '삼성',
-    jobCategory: '개발',
-    commentCount: 35,
-    likeCount: 58,
-  },
-  {
-    id: 4,
-    title: 'LG CNS 데이터 분석가 직무 역량 요구사항',
-    author: '데이터러버',
-    date: '2024-01-12T11:15:00',
-    views: 167,
-    company: 'LG',
-    jobCategory: '데이터',
-    commentCount: 12,
-    likeCount: 28,
-  },
-  {
-    id: 5,
-    title: '라인 플러스 iOS 개발자 채용 프로세스 정보',
-    author: 'iOS개발자',
-    date: '2024-01-11T13:25:00',
-    views: 203,
-    company: '라인',
-    jobCategory: 'iOS',
-    commentCount: 27,
-    likeCount: 41,
-  },
-  {
-    id: 6,
-    title: '토스 프로덕트 매니저 직무 역량 및 면접 질문 모음',
-    author: 'PM지망생',
-    date: '2024-01-10T15:40:00',
-    views: 156,
-    company: '토스',
-    jobCategory: '기획',
-    commentCount: 15,
-    likeCount: 29,
-  },
-  {
-    id: 7,
-    title: '쿠팡 풀스택 개발자 기술스택 및 코딩테스트 정보',
-    author: '풀스택러',
-    date: '2024-01-09T10:30:00',
-    views: 278,
-    company: '쿠팡',
-    jobCategory: '풀스택',
-    commentCount: 42,
-    likeCount: 67,
-  },
-  {
-    id: 8,
-    title: '배달의민족 안드로이드 개발자 채용 요구사항',
-    author: '안드로이더',
-    date: '2024-01-08T17:15:00',
-    views: 134,
-    company: '배민',
-    jobCategory: 'AOS',
-    commentCount: 9,
-    likeCount: 22,
-  },
-  {
-    id: 9,
-    title: '야놀자 DevOps 엔지니어 기술면접 질문 패턴',
-    author: 'DevOps맨',
-    date: '2024-01-07T12:50:00',
-    views: 198,
-    company: '야놀자',
-    jobCategory: 'DevOps',
-    commentCount: 31,
-    likeCount: 39,
-  },
-  {
-    id: 10,
-    title: '당근마켓 UX 디자이너 포트폴리오 요구사항',
-    author: 'UX디자이너',
-    date: '2024-01-06T08:35:00',
-    views: 221,
-    company: '당근마켓',
-    jobCategory: 'UX',
-    commentCount: 24,
-    likeCount: 44,
-  },
-  {
-    id: 11,
-    title: 'SK텔레콤 AI 개발자 직무 역량 및 기술스택 정보',
-    author: 'AI연구원',
-    date: '2024-01-05T19:10:00',
-    views: 289,
-    company: 'SKT',
-    jobCategory: 'AI',
-    commentCount: 38,
-    likeCount: 72,
-  },
-  {
-    id: 12,
-    title: 'KT 클라우드 엔지니어 채용 정보 및 면접 질문 유형',
-    author: '클라우드맨',
-    date: '2024-01-04T14:20:00',
-    views: 145,
-    company: 'KT',
-    jobCategory: '클라우드',
-    commentCount: 16,
-    likeCount: 25,
-  },
-  {
-    id: 13,
-    title: '현대자동차 소프트웨어 개발자 채용 프로세스',
-    author: '자동차개발자',
-    date: '2024-01-03T11:05:00',
-    views: 167,
-    company: '현대차',
-    jobCategory: '개발',
-    commentCount: 19,
-    likeCount: 33,
-  },
-  {
-    id: 14,
-    title: 'NHN 게임 개발자 기술면접 질문 패턴 분석',
-    author: '게임개발자',
-    date: '2024-01-02T16:30:00',
-    views: 201,
-    company: 'NHN',
-    jobCategory: '게임',
-    commentCount: 26,
-    likeCount: 48,
-  },
-  {
-    id: 15,
-    title: '넥슨 게임 기획자 직무 요구사항 및 면접 정보',
-    author: '게임기획자',
-    date: '2024-01-01T09:45:00',
-    views: 178,
-    company: '넥슨',
-    jobCategory: '기획',
-    commentCount: 21,
-    likeCount: 37,
-  },
-  {
-    id: 16,
-    title: '엔씨소프트 서버 개발자 기술스택 및 채용 정보',
-    author: '서버개발자',
-    date: '2023-12-31T18:25:00',
-    views: 234,
-    company: 'NC소프트',
-    jobCategory: 'BE',
-    commentCount: 29,
-    likeCount: 51,
-  },
-  {
-    id: 17,
-    title: '스마일게이트 QA 엔지니어 직무 역량 요구사항',
-    author: 'QA엔지니어',
-    date: '2023-12-30T13:40:00',
-    views: 123,
-    company: '스마일게이트',
-    jobCategory: 'QA',
-    commentCount: 8,
-    likeCount: 19,
-  },
-  {
-    id: 18,
-    title: '컴투스 모바일 게임 개발자 면접 질문 유형',
-    author: '모바일개발자',
-    date: '2023-12-29T15:55:00',
-    views: 189,
-    company: '컴투스',
-    jobCategory: '게임',
-    commentCount: 22,
-    likeCount: 36,
-  },
-  {
-    id: 19,
-    title: '우아한형제들 데이터 엔지니어 채용 프로세스',
-    author: '데이터엔지니어',
-    date: '2023-12-28T10:15:00',
-    views: 267,
-    company: '우아한형제들',
-    jobCategory: '데이터',
-    commentCount: 33,
-    likeCount: 59,
-  },
-  {
-    id: 20,
-    title: '버즈빌 마케팅 데이터 분석가 직무 정보',
-    author: '마케터',
-    date: '2023-12-27T17:30:00',
-    views: 156,
-    company: '버즈빌',
-    jobCategory: '마케팅',
-    commentCount: 14,
-    likeCount: 26,
-  },
-  {
-    id: 21,
-    title: '마켓컬리 프론트엔드 개발자 기술스택 정보',
-    author: '프론트개발자',
-    date: '2023-12-26T12:45:00',
-    views: 198,
-    company: '마켓컬리',
-    jobCategory: 'FE',
-    commentCount: 25,
-    likeCount: 42,
-  },
-  {
-    id: 22,
-    title: '뱅크샐러드 핀테크 개발자 채용 요구사항',
-    author: '핀테크개발자',
-    date: '2023-12-25T16:20:00',
-    views: 212,
-    company: '뱅크샐러드',
-    jobCategory: '핀테크',
-    commentCount: 30,
-    likeCount: 47,
-  },
-  {
-    id: 23,
-    title: '하이퍼커넥트 AI 연구원 직무 역량 및 면접 질문',
-    author: 'AI연구자',
-    date: '2023-12-24T11:35:00',
-    views: 245,
-    company: '하이퍼커넥트',
-    jobCategory: 'AI',
-    commentCount: 34,
-    likeCount: 56,
-  },
-  {
-    id: 24,
-    title: '리디 웹 개발자 채용 프로세스 및 면접 정보',
-    author: '웹개발자',
-    date: '2023-12-23T14:50:00',
-    views: 167,
-    company: '리디',
-    jobCategory: '웹',
-    commentCount: 17,
-    likeCount: 31,
-  },
-  {
-    id: 25,
-    title: '직방 빅데이터 분석가 기술면접 질문 패턴',
-    author: '빅데이터분석가',
-    date: '2023-12-22T09:10:00',
-    views: 189,
-    company: '직방',
-    jobCategory: '데이터',
-    commentCount: 23,
-    likeCount: 38,
-  },
-];
 
 // 게시판 정보 매핑
 const boardInfo: Record<string, { name: string; description: string }> = {
@@ -352,20 +106,105 @@ export default function BoardPage({ params }: BoardPageProps) {
   const board = boardInfo[boardId];
   const categoryInfo = getCategoryInfo(boardId);
 
-  // 페이지네이션 상태
+  // 상태 관리
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchType, setSearchType] = useState('전체');
+  const [sortType, setSortType] = useState('최신순');
   const postsPerPage = 20;
 
-  // 현재 게시판이 기업별 면접 정보(ID: 1)인 경우에만 더미 데이터 사용
-  const posts = useMemo(() => {
-    return boardId === '1' ? dummyPosts : [];
+  // 게시글 데이터 로드
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await boardAPI.getPosts(boardId);
+        const postsData = (response.data as PostsResponse).posts || [];
+
+        console.log('📋 게시글 데이터 로드:', postsData.length, '개');
+        setPosts(postsData);
+        setFilteredPosts(postsData);
+      } catch (err) {
+        console.error('게시글 로드 에러:', err);
+        setError('게시글을 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (boardId) {
+      fetchPosts();
+    }
   }, [boardId]);
 
+  // 검색 및 정렬 처리
+  useEffect(() => {
+    let filtered = [...posts];
+
+    // 검색 필터링
+    if (searchTerm.trim()) {
+      filtered = filtered.filter((post) => {
+        const term = searchTerm.toLowerCase();
+        switch (searchType) {
+          case '제목':
+            return post.title.toLowerCase().includes(term);
+          case '내용':
+            return post.content.toLowerCase().includes(term);
+          case '작성자':
+            return post.nickName.toLowerCase().includes(term);
+          default: // '전체'
+            return (
+              post.title.toLowerCase().includes(term) ||
+              post.content.toLowerCase().includes(term) ||
+              post.nickName.toLowerCase().includes(term)
+            );
+        }
+      });
+    }
+
+    // 정렬 처리
+    switch (sortType) {
+      case '최신순':
+        filtered.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        break;
+      case '조회순':
+        filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
+        break;
+      case '댓글순':
+        // 댓글 수 기준 정렬 (추후 구현)
+        break;
+      default:
+        break;
+    }
+
+    setFilteredPosts(filtered);
+    setCurrentPage(1); // 검색/정렬 시 첫 페이지로 이동
+  }, [posts, searchTerm, searchType, sortType]);
+
+  // 검색 함수
+  const handleSearch = () => {
+    // useEffect에서 자동으로 처리되므로 별도 로직 불필요
+  };
+
+  // 새로고침 함수
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
   // 페이지네이션 계산
-  const totalPages = Math.ceil(posts.length / postsPerPage);
+  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
   const indexOfLastPost = currentPage * postsPerPage;
   const indexOfFirstPost = indexOfLastPost - postsPerPage;
-  const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
+  const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
 
   if (!board) {
     return (
@@ -391,7 +230,6 @@ export default function BoardPage({ params }: BoardPageProps) {
             </div>
           </div>
         </main>
-        <Footer />
       </>
     );
   }
@@ -455,7 +293,11 @@ export default function BoardPage({ params }: BoardPageProps) {
               <div className='mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4'>
                 <div className='flex flex-col sm:flex-row gap-3 justify-between'>
                   <div className='flex gap-2 flex-1'>
-                    <select className='px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white'>
+                    <select
+                      className='px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white'
+                      value={searchType}
+                      onChange={(e) => setSearchType(e.target.value)}
+                    >
                       <option>전체</option>
                       <option>제목</option>
                       <option>내용</option>
@@ -465,12 +307,21 @@ export default function BoardPage({ params }: BoardPageProps) {
                       type='text'
                       placeholder='검색어를 입력하세요'
                       className='px-3 py-2 border border-gray-300 rounded-lg flex-1 sm:max-w-xs bg-white'
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <button className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors'>
+                    <button
+                      onClick={handleSearch}
+                      className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors'
+                    >
                       검색
                     </button>
                   </div>
-                  <select className='px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white'>
+                  <select
+                    className='px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white'
+                    value={sortType}
+                    onChange={(e) => setSortType(e.target.value)}
+                  >
                     <option>최신순</option>
                     <option>추천순</option>
                     <option>조회순</option>
@@ -493,89 +344,162 @@ export default function BoardPage({ params }: BoardPageProps) {
                   </div>
                 </div>
 
-                {/* 게시글 목록 또는 빈 상태 */}
-                {currentPosts.length > 0 ? (
-                  <div className='divide-y divide-gray-200'>
-                    {currentPosts.map((post, index) => (
-                      <div
-                        key={post.id}
-                        className='grid grid-cols-12 gap-4 p-4 hover:bg-gray-50 transition-colors cursor-pointer'
-                      >
-                        <div className='col-span-1 text-center text-sm text-gray-600'>
-                          {(currentPage - 1) * postsPerPage + index + 1}
-                        </div>
-                        <div className='col-span-5'>
-                          <div className='flex items-center gap-2'>
-                            <span className='text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded'>
-                              {post.company} · {post.jobCategory}
-                            </span>
-                            <Link
-                              href={`/community/boards/${boardId}/posts/${post.id}`}
-                              className='text-gray-900 hover:text-blue-600 transition-colors font-medium'
-                            >
-                              {post.title}
-                            </Link>
-                            <span className='text-sm text-gray-500'>
-                              [{formatCount(post.commentCount)}]
-                            </span>
-                          </div>
-                        </div>
-                        <div className='col-span-2 text-center text-sm text-gray-600'>
-                          {post.author}
-                        </div>
-                        <div className='col-span-2 text-center text-sm text-gray-600'>
-                          {formatDate(post.date)}
-                        </div>
-                        <div className='col-span-1 text-center text-sm text-gray-600'>
-                          {post.views}
-                        </div>
-                        <div className='col-span-1 text-center text-sm text-gray-600'>
-                          {post.likeCount}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
+                {/* 로딩 상태 */}
+                {loading && (
                   <div className='text-center py-16'>
-                    <div className='w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6'>
-                      <HiDocumentText className='w-8 h-8 text-gray-400' />
+                    <div className='inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
+                    <p className='mt-4 text-gray-600'>
+                      게시글을 불러오는 중...
+                    </p>
+                  </div>
+                )}
+
+                {/* 에러 상태 */}
+                {error && (
+                  <div className='text-center py-16'>
+                    <div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6'>
+                      <HiDocumentText className='w-8 h-8 text-red-400' />
                     </div>
                     <h3 className='text-xl font-semibold text-gray-900 mb-3'>
-                      아직 게시글이 없습니다
+                      오류가 발생했습니다
                     </h3>
-                    <p className='text-gray-600 mb-8'>
-                      첫 번째 게시글을 작성해보세요!
-                    </p>
-                    <Link
-                      href={`/community/boards/${boardId}/write`}
+                    <p className='text-gray-600 mb-8'>{error}</p>
+                    <button
+                      onClick={handleRefresh}
                       className='inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors'
                     >
-                      <HiPlus className='w-4 h-4' />
-                      글쓰기
-                    </Link>
+                      다시 시도
+                    </button>
                   </div>
+                )}
+
+                {/* 게시글 목록 또는 빈 상태 */}
+                {!loading && !error && (
+                  <>
+                    {currentPosts.length > 0 ? (
+                      <div className='divide-y divide-gray-200'>
+                        {currentPosts.map((post, index) => (
+                          <div
+                            key={post.postId}
+                            className='grid grid-cols-12 gap-4 p-4 hover:bg-gray-50 transition-colors cursor-pointer'
+                          >
+                            <div className='col-span-1 text-center text-sm text-gray-600'>
+                              {(currentPage - 1) * postsPerPage + index + 1}
+                            </div>
+                            <div className='col-span-5'>
+                              <div className='flex items-center gap-2'>
+                                {/* 취업 정보 카테고리인 경우 메타정보 표시 */}
+                                {['1', '2', '3', '4'].includes(boardId) &&
+                                  (post.company || post.jobCategory) && (
+                                    <span className='text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded'>
+                                      {post.company && post.jobCategory
+                                        ? `${post.company} · ${post.jobCategory}`
+                                        : post.company || post.jobCategory}
+                                    </span>
+                                  )}
+                                <Link
+                                  href={`/community/boards/${boardId}/posts/${post.postId}`}
+                                  className='text-gray-900 hover:text-blue-600 transition-colors font-medium'
+                                >
+                                  {post.title}
+                                </Link>
+                                {/* 첨부파일 아이콘 표시 */}
+                                {post.attachments.length > 0 && (
+                                  <HiPaperClip className='w-4 h-4 text-gray-500 ml-1' />
+                                )}
+                                {/* 댓글 수 표시 [댓글수] 형식 */}
+                                {/* 댓글 기능 구현 시 조건부 표시 */}
+                                {/* {post.commentCount > 0 && (
+                                  <span className='text-gray-500 text-sm ml-1'>[{post.commentCount}]</span>
+                                )} */}
+                              </div>
+                            </div>
+                            <div className='col-span-2 text-center text-sm text-gray-600'>
+                              {post.nickName}
+                            </div>
+                            <div className='col-span-2 text-center text-sm text-gray-600'>
+                              {formatDate(post.createdAt)}
+                            </div>
+                            <div className='col-span-1 text-center text-sm text-gray-600'>
+                              {post.views}
+                            </div>
+                            <div className='col-span-1 text-center text-sm text-gray-600'>
+                              {/* 추천 수 표시 (추후 구현) */}0
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className='text-center py-16'>
+                        <div className='w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6'>
+                          <HiDocumentText className='w-8 h-8 text-gray-400' />
+                        </div>
+                        {searchTerm.trim() ? (
+                          <>
+                            <h3 className='text-xl font-semibold text-gray-900 mb-3'>
+                              검색 결과가 없습니다
+                            </h3>
+                            <p className='text-gray-600 mb-8'>
+                              &apos;{searchTerm}&apos; 검색 결과가 없습니다.
+                              다른 검색어를 시도해보세요.
+                            </p>
+                            <button
+                              onClick={() => {
+                                setSearchTerm('');
+                                setSearchType('전체');
+                              }}
+                              className='inline-flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors mr-4'
+                            >
+                              검색 초기화
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <h3 className='text-xl font-semibold text-gray-900 mb-3'>
+                              아직 게시글이 없습니다
+                            </h3>
+                            <p className='text-gray-600 mb-8'>
+                              첫 번째 게시글을 작성해보세요!
+                            </p>
+                          </>
+                        )}
+                        <Link
+                          href={`/community/boards/${boardId}/write`}
+                          className='inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors'
+                        >
+                          <HiPlus className='w-4 h-4' />
+                          글쓰기
+                        </Link>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
               {/* 페이지네이션 */}
-              {posts.length > 0 && totalPages > 1 && (
-                <div className='mt-12 flex justify-center'>
-                  <div className='bg-white rounded-lg shadow-sm border border-gray-200 p-2'>
-                    <div className='flex items-center gap-1'>
-                      <button
-                        onClick={() =>
-                          setCurrentPage(Math.max(1, currentPage - 1))
-                        }
-                        disabled={currentPage === 1}
-                        className='px-4 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
-                      >
-                        <HiChevronLeft className='w-4 h-4' />
-                        이전
-                      </button>
+              {!loading &&
+                !error &&
+                filteredPosts.length > 0 &&
+                totalPages > 1 && (
+                  <div className='mt-12 flex justify-center'>
+                    <div className='bg-white rounded-lg shadow-sm border border-gray-200 p-2'>
+                      <div className='flex items-center gap-1'>
+                        <button
+                          onClick={() =>
+                            setCurrentPage(Math.max(1, currentPage - 1))
+                          }
+                          disabled={currentPage === 1}
+                          className='px-4 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
+                        >
+                          <HiChevronLeft className='w-4 h-4' />
+                          이전
+                        </button>
 
-                      {/* 페이지 번호 */}
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                        (pageNum) => (
+                        {/* 페이지 번호 */}
+                        {Array.from(
+                          { length: totalPages },
+                          (_, i) => i + 1
+                        ).map((pageNum) => (
                           <button
                             key={pageNum}
                             onClick={() => setCurrentPage(pageNum)}
@@ -587,23 +511,24 @@ export default function BoardPage({ params }: BoardPageProps) {
                           >
                             {pageNum}
                           </button>
-                        )
-                      )}
+                        ))}
 
-                      <button
-                        onClick={() =>
-                          setCurrentPage(Math.min(totalPages, currentPage + 1))
-                        }
-                        disabled={currentPage === totalPages}
-                        className='px-4 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
-                      >
-                        다음
-                        <HiChevronRight className='w-4 h-4' />
-                      </button>
+                        <button
+                          onClick={() =>
+                            setCurrentPage(
+                              Math.min(totalPages, currentPage + 1)
+                            )
+                          }
+                          disabled={currentPage === totalPages}
+                          className='px-4 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
+                        >
+                          다음
+                          <HiChevronRight className='w-4 h-4' />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </div>
         </div>

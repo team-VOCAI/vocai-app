@@ -311,8 +311,6 @@ export default function WritePage({ params }: WritePageProps) {
     }));
   };
 
-  // 파일 크기 포맷팅과 아이콘 함수는 /lib/fileUtils.ts로 분리됨
-
   // 태그 추가
   const addTag = () => {
     if (currentTag.trim() && !formData.tags.includes(currentTag.trim())) {
@@ -359,28 +357,44 @@ export default function WritePage({ params }: WritePageProps) {
     setIsSubmitting(true);
 
     try {
-      // 내용에 메타 정보 포함
-      let content = formData.content;
-      if (boardId === '1') {
-        const finalCompany =
-          formData.company === '기타' ? customCompany : formData.company;
-        const finalJobCategory =
-          formData.jobCategory === '기타'
-            ? customJobCategory
-            : jobCategories.find((cat) => cat.value === formData.jobCategory)
-                ?.label || formData.jobCategory;
+      // 메타정보 별도 처리
+      const finalCompany =
+        formData.company === '기타' ? customCompany : formData.company;
+      const finalJobCategory =
+        formData.jobCategory === '기타'
+          ? customJobCategory
+          : jobCategories.find((cat) => cat.value === formData.jobCategory)
+              ?.label || formData.jobCategory;
 
-        content = `[기업] ${finalCompany}\n[직무] ${finalJobCategory}\n${
-          formData.tags.length > 0 ? `[태그] ${formData.tags.join(', ')}\n` : ''
-        }\n${formData.content}`;
+      // 요청 데이터 구성 (boardId는 URL params에서 처리)
+      const requestData: {
+        title: string;
+        content: string;
+        attachments: Array<{
+          name: string;
+          size: number;
+          type: string;
+          data: string;
+        }>;
+        company?: string | null;
+        jobCategory?: string | null;
+        tags?: string[] | null;
+      } = {
+        title: formData.title,
+        content: formData.content, // 순수 내용만
+        attachments: formData.attachments,
+      };
+
+      // 취업 정보 게시판인 경우 메타정보 추가
+      if (['1', '2', '3', '4'].includes(boardId)) {
+        requestData.company = finalCompany || null;
+        requestData.jobCategory = finalJobCategory || null;
+        requestData.tags = formData.tags.length > 0 ? formData.tags : null;
       }
 
-      const response = await boardAPI.createPost(boardId, {
-        title: formData.title,
-        content: content,
-        boardId: parseInt(boardId),
-        attachments: formData.attachments,
-      });
+      console.log('🚀 전송할 데이터:', requestData);
+
+      const response = await boardAPI.createPost(boardId, requestData);
 
       // axios 인스턴스가 이미 에러 처리하므로 여기 도달하면 성공
       alert('게시글이 성공적으로 작성되었습니다.');
