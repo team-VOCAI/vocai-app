@@ -11,7 +11,7 @@ import {
   HiVideoCamera,
   HiUsers,
   HiEye,
-  HiHeart,
+  HiHandThumbUp,
   HiChatBubbleLeftRight,
   HiChevronRight,
 } from 'react-icons/hi2';
@@ -352,7 +352,7 @@ export default function Home() {
                           {item.views}
                         </div>
                         <div className='flex items-center gap-1'>
-                          <HiHeart className='w-4 h-4' />
+                          <HiHandThumbUp className='w-4 h-4' />
                           {item.likes}
                         </div>
                         <div className='flex items-center gap-1'>
@@ -482,7 +482,7 @@ export default function Home() {
                         {item.views}
                       </div>
                       <div className='flex items-center gap-1'>
-                        <HiHeart className='w-4 h-4' />
+                        <HiHandThumbUp className='w-4 h-4' />
                         {item.likes}
                       </div>
                       <div className='flex items-center gap-1'>
