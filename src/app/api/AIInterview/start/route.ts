@@ -1,0 +1,39 @@
+import { NextResponse, NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getProfileFromRequest } from "@/lib/getProfile";
+
+
+export async function POST(req: NextRequest) {
+  try {
+    const profile = await getProfileFromRequest(req);
+
+    if (!profile) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { persona } = body;
+
+    if (!persona) {
+      return NextResponse.json(
+        { error: "persona는 필수입니다." },
+        { status: 400 }
+      );
+    }
+
+    const session = await prisma.mockInterviewSession.create({
+      data: {
+        profileId: profile.profileId,
+        persona,
+      },
+    });
+
+    return NextResponse.json({ sessionId: session.sessionId }, { status: 201 });
+  } catch (error) {
+    console.error("세션 생성 오류:", error);
+    return NextResponse.json(
+      { error: "서버 오류로 세션을 생성할 수 없습니다." },
+      { status: 500 }
+    );
+  }
+}

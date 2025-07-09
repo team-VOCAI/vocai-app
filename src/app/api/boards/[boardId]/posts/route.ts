@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getProfileFromRequest } from '@/lib/getProfile';
 
 // 첨부파일 타입 정의
 interface Attachment {
@@ -58,6 +59,16 @@ export async function POST(
   context: { params: Promise<{ boardId: string }> }
 ) {
   try {
+    // 인증 확인
+    const profile = await getProfileFromRequest(req);
+
+    if (!profile) {
+      return NextResponse.json(
+        { message: '인증되지 않았거나 프로필을 찾을 수 없습니다.' },
+        { status: 401 }
+      );
+    }
+
     const { boardId } = await context.params;
     const numBoardId = Number(boardId);
 
@@ -80,17 +91,15 @@ export async function POST(
       );
     }
 
-    const profile = await prisma.profile.findFirst(); // 테스트용 임시 사용자
-
     const board = await prisma.board.findUnique({
       where: { boardId: numBoardId },
     });
     console.log('📋 board 조회 결과:', board);
 
-    if (!profile || !board) {
-      console.log('❌ profile 또는 board가 존재하지 않음');
+    if (!board) {
+      console.log('❌ board가 존재하지 않음');
       return NextResponse.json(
-        { message: 'profile 또는 board가 존재하지 않습니다.' },
+        { message: '게시판이 존재하지 않습니다.' },
         { status: 400 }
       );
     }

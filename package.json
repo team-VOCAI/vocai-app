@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google/genai": "^1.8.0",
     "@prisma/client": "^6.10.0",
     "@tiptap/extension-color": "^2.24.0",
     "@tiptap/extension-highlight": "^2.24.0",
