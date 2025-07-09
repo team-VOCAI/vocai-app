@@ -11,13 +11,16 @@ export interface ApiResponse<T = unknown> {
 export interface PostData {
   title: string;
   content: string;
-  boardId: number;
   attachments?: Array<{
     name: string;
     size: number;
     type: string;
     data: string;
   }>;
+  // 메타정보 (선택사항)
+  company?: string | null;
+  jobCategory?: string | null;
+  tags?: string[] | null;
 }
 
 // Axios 인스턴스 생성
@@ -86,7 +89,11 @@ export const boardAPI = {
 
   // 게시글 목록 조회
   getPosts: async (boardId: string) => {
-    return apiClient.get(`/boards/${boardId}/posts`);
+    const response = await fetch(`/api/boards/${boardId}/posts`);
+    if (!response.ok) {
+      throw new Error('게시글 목록을 불러오는데 실패했습니다.');
+    }
+    return { data: await response.json() };
   },
 
   // 게시글 검색
@@ -104,6 +111,15 @@ export const boardAPI = {
   // 조회수 증가
   incrementView: async (boardId: string, postId: string) => {
     return apiClient.post(`/boards/${boardId}/posts/${postId}/increment-view`);
+  },
+
+  // 게시판 목록별 게시글 수 조회
+  getStats: async () => {
+    const response = await fetch('/api/boards/stats');
+    if (!response.ok) {
+      throw new Error('게시판 통계를 불러오는데 실패했습니다.');
+    }
+    return { data: await response.json() };
   },
 };
 
