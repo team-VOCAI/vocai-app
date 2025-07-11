@@ -5,11 +5,11 @@ import { getProfileFromRequest } from "@/lib/getProfile";
 
 export async function POST(req: NextRequest) {
   try {
-    // const profile = await getProfileFromRequest(req);
-    // if (!profile) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
-    const profile = { profileId: 1 };
+    const profile = await getProfileFromRequest(req);
+    if (!profile) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { sessionId } = await req.json();
 
     const numSessionId = Number(sessionId);
