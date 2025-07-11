@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getProfileFromRequest } from "@/lib/getProfile";
 
+interface Attachment {
+  name: string;
+  size: number;
+  type: string;
+  data: string; // base64
+}
+
 // GET: 게시글 상세
 export async function GET(
   req: NextRequest,
@@ -43,6 +50,7 @@ export async function PUT(
 
   const post = await prisma.post.findUnique({
     where: { postId: numericPostId },
+    include: { attachments: true }, // 기존 첨부파일도 조회
   });
 
   if (!post) {
@@ -59,7 +67,17 @@ export async function PUT(
     );
   }
 
-  const { title, content } = await req.json();
+  const requestData = await req.json();
+  const {
+    title,
+    content,
+    attachments,
+    deleteAttachmentIndexes,
+    company,
+    jobCategory,
+    tags,
+  } = requestData;
+
   if (!title || !content || title.trim() === "" || content.trim() === "") {
     return NextResponse.json(
       { error: "제목과 내용을 입력해 주세요." },
@@ -67,12 +85,60 @@ export async function PUT(
     );
   }
 
-  const updated = await prisma.post.update({
+  // 1. 게시글 정보 수정
+  const updatedPost = await prisma.post.update({
     where: { postId: numericPostId },
-    data: { title, content },
+    data: {
+      title,
+      content,
+      company: company || null,
+      jobCategory: jobCategory || null,
+      tags: tags && tags.length > 0 ? tags.join(",") : null,
+    },
   });
 
-  return NextResponse.json(updated);
+  // 2. 삭제할 첨부파일이 있는 경우, 인덱스로 처리
+  if (
+    Array.isArray(deleteAttachmentIndexes) &&
+    deleteAttachmentIndexes.length > 0
+  ) {
+    const attachmentsToDelete = deleteAttachmentIndexes
+      .map((index: number) => post.attachments[index])
+      .filter(Boolean); // 존재하는 첨부파일만
+
+    const idsToDelete = attachmentsToDelete.map((a) => a.attachmentId);
+
+    if (idsToDelete.length > 0) {
+      await prisma.attachment.deleteMany({
+        where: { attachmentId: { in: idsToDelete } },
+      });
+    }
+  }
+
+  // 3. 새 첨부파일 추가
+  if (attachments && attachments.length > 0) {
+    for (const file of attachments as Attachment[]) {
+      const base64Data = file.data.split(",")[1] || file.data;
+      const fileBuffer = Buffer.from(base64Data, "base64");
+
+      await prisma.attachment.create({
+        data: {
+          postId: numericPostId,
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          fileData: fileBuffer,
+        },
+      });
+    }
+  }
+
+  return NextResponse.json({
+    message: "게시글이 성공적으로 수정되었습니다.",
+    post: updatedPost,
+    deletedCount: deleteAttachmentIndexes?.length || 0,
+    addedCount: attachments?.length || 0,
+  });
 }
 
 // DELETE: 게시글 삭제 (soft delete)
