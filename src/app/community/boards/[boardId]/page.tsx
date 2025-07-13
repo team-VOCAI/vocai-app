@@ -406,11 +406,11 @@ export default function BoardPage({ params }: BoardPageProps) {
                                 </Link>
                                 {/* 첨부파일 아이콘 표시 */}
                                 {post.attachments.length > 0 && (
-                                  <HiPaperClip className='w-4 h-4 text-gray-500 ml-1' />
+                                  <HiPaperClip className='w-4 h-4 text-gray-500' />
                                 )}
                                 {/* 댓글 수 표시 [댓글수] 형식 */}
                                 {post.commentCount > 0 && (
-                                  <span className='text-gray-500 text-sm ml-1'>
+                                  <span className='text-gray-500 text-sm'>
                                     [{post.commentCount}]
                                   </span>
                                 )}
