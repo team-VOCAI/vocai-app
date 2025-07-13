@@ -26,7 +26,7 @@ interface Post {
   nickName: string;
   createdAt: string;
   updatedAt: string;
-  views: number;
+  view: number;
   company?: string | null;
   jobCategory?: string | null;
   tags?: string | null;
@@ -177,7 +177,7 @@ export default function BoardPage({ params }: BoardPageProps) {
         );
         break;
       case '조회순':
-        filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
+        filtered.sort((a, b) => (b.view || 0) - (a.view || 0));
         break;
       case '댓글순':
         // 댓글 수 기준 정렬 (추후 구현)
@@ -421,7 +421,7 @@ export default function BoardPage({ params }: BoardPageProps) {
                               {formatDate(post.createdAt)}
                             </div>
                             <div className='col-span-1 text-center text-sm text-gray-600'>
-                              {post.views}
+                              {post.view}
                             </div>
                             <div className='col-span-1 text-center text-sm text-gray-600'>
                               {/* 추천 수 표시 (추후 구현) */}0
