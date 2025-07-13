@@ -42,10 +42,21 @@ export async function GET(
           // fileData는 제외 (용량 때문에)
         },
       },
+      comments: {
+        where: { deletedAt: null }, // 삭제되지 않은 댓글만 카운트
+        select: { commentId: true }, // 카운트만 필요하므로 ID만 선택
+      },
     },
   });
 
-  return NextResponse.json({ posts });
+  // 댓글 수 계산하여 응답 데이터 가공
+  const postsWithCommentCount = posts.map((post) => ({
+    ...post,
+    commentCount: post.comments.length,
+    comments: undefined, // 댓글 데이터는 제거 (카운트만 필요)
+  }));
+
+  return NextResponse.json({ posts: postsWithCommentCount });
 }
 
 export async function POST(

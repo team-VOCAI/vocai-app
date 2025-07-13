@@ -442,7 +442,7 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
 
                 {/* 태그 (본문 하단) */}
                 {post.tags && (
-                  <div className='flex flex-wrap gap-2 mb-6 pt-4 border-t border-gray-200'>
+                  <div className='flex flex-wrap gap-2 mb-6 pt-4'>
                     {post.tags
                       .split(',')
                       .filter((tag) => tag.trim())
@@ -474,11 +474,10 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
                             <HiPaperClip className='w-4 h-4 text-gray-500' />
                             <div>
                               <p className='text-sm font-medium text-gray-900'>
-                                {attachment.fileName}
-                              </p>
-                              <p className='text-xs text-gray-500'>
-                                {formatFileSize(attachment.fileSize)} •{' '}
-                                {formatDate(attachment.createdAt)}
+                                {attachment.fileName}{' '}
+                                <span className='text-xs text-gray-500 font-normal'>
+                                  ({formatFileSize(attachment.fileSize)})
+                                </span>
                               </p>
                             </div>
                           </div>

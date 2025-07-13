@@ -27,6 +27,7 @@ interface Post {
   createdAt: string;
   updatedAt: string;
   view: number;
+  commentCount: number; // 댓글 수 추가
   company?: string | null;
   jobCategory?: string | null;
   tags?: string | null;
@@ -408,10 +409,11 @@ export default function BoardPage({ params }: BoardPageProps) {
                                   <HiPaperClip className='w-4 h-4 text-gray-500 ml-1' />
                                 )}
                                 {/* 댓글 수 표시 [댓글수] 형식 */}
-                                {/* 댓글 기능 구현 시 조건부 표시 */}
-                                {/* {post.commentCount > 0 && (
-                                  <span className='text-gray-500 text-sm ml-1'>[{post.commentCount}]</span>
-                                )} */}
+                                {post.commentCount > 0 && (
+                                  <span className='text-gray-500 text-sm ml-1'>
+                                    [{post.commentCount}]
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <div className='col-span-2 text-center text-sm text-gray-600'>
