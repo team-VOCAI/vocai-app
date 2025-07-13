@@ -42,7 +42,8 @@ interface PostDetail {
     attachmentId: number;
     fileName: string;
     fileSize: number;
-    uploadedAt: string;
+    fileType: string;
+    createdAt: string;
   }>;
 }
 
@@ -477,7 +478,7 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
                               </p>
                               <p className='text-xs text-gray-500'>
                                 {formatFileSize(attachment.fileSize)} •{' '}
-                                {formatDate(attachment.uploadedAt)}
+                                {formatDate(attachment.createdAt)}
                               </p>
                             </div>
                           </div>

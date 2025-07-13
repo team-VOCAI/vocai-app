@@ -16,6 +16,7 @@ export async function GET(
       comments: {
         where: { deletedAt: null }, // 삭제되지 않은 댓글만 카운트
       },
+      attachments: true, // 첨부파일 포함
     },
   });
 
