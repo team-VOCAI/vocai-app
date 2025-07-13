@@ -45,13 +45,7 @@ export async function GET(
     },
   });
 
-  // 필드명 매핑 (view -> views)
-  const postsWithViews = posts.map((post) => ({
-    ...post,
-    views: post.view, // view 필드를 views로 매핑
-  }));
-
-  return NextResponse.json({ posts: postsWithViews });
+  return NextResponse.json({ posts });
 }
 
 export async function POST(
