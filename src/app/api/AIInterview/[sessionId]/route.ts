@@ -9,15 +9,14 @@ export async function POST(
   context: { params: Promise<{ sessionId: string }> }
 ) {
   try {
-    // const profile = await getProfileFromRequest(req);
+    const profile = await getProfileFromRequest(req);
 
-    // if (!profile) {
-    //   return NextResponse.json(
-    //     { error: "profile이 없습니다." },
-    //     { status: 400 }
-    //   );
-    // }
-    const profile = { profileId: 1 };
+    if (!profile) {
+      return NextResponse.json(
+        { error: "profile이 없습니다." },
+        { status: 400 }
+      );
+    }
 
     const { answerText } = await req.json();
     const { sessionId } = await context.params;
@@ -40,7 +39,6 @@ export async function POST(
         { status: 403 }
       );
     }
-
 
     if (!answerText) {
       const question = await generateQuestion(numSessionId);
@@ -76,4 +74,3 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
