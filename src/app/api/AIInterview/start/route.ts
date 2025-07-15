@@ -5,12 +5,12 @@ import { generateQuestion } from "@/lib/interview/generateQuestion";
 
 export async function POST(req: NextRequest) {
   try {
-    // const profile = await getProfileFromRequest(req);
+    const profile = await getProfileFromRequest(req);
 
-    // if (!profile) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
-    const profile = { profileId: 1 };
+    if (!profile) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { persona } = await req.json();
 
     if (!persona) {
