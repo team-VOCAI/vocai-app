@@ -26,7 +26,8 @@ interface Post {
   nickName: string;
   createdAt: string;
   updatedAt: string;
-  views: number;
+  view: number;
+  commentCount: number; // 댓글 수 추가
   company?: string | null;
   jobCategory?: string | null;
   tags?: string | null;
@@ -177,7 +178,7 @@ export default function BoardPage({ params }: BoardPageProps) {
         );
         break;
       case '조회순':
-        filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
+        filtered.sort((a, b) => (b.view || 0) - (a.view || 0));
         break;
       case '댓글순':
         // 댓글 수 기준 정렬 (추후 구현)
@@ -405,13 +406,14 @@ export default function BoardPage({ params }: BoardPageProps) {
                                 </Link>
                                 {/* 첨부파일 아이콘 표시 */}
                                 {post.attachments.length > 0 && (
-                                  <HiPaperClip className='w-4 h-4 text-gray-500 ml-1' />
+                                  <HiPaperClip className='w-4 h-4 text-gray-500' />
                                 )}
                                 {/* 댓글 수 표시 [댓글수] 형식 */}
-                                {/* 댓글 기능 구현 시 조건부 표시 */}
-                                {/* {post.commentCount > 0 && (
-                                  <span className='text-gray-500 text-sm ml-1'>[{post.commentCount}]</span>
-                                )} */}
+                                {post.commentCount > 0 && (
+                                  <span className='text-gray-500 text-sm'>
+                                    [{post.commentCount}]
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <div className='col-span-2 text-center text-sm text-gray-600'>
@@ -421,7 +423,7 @@ export default function BoardPage({ params }: BoardPageProps) {
                               {formatDate(post.createdAt)}
                             </div>
                             <div className='col-span-1 text-center text-sm text-gray-600'>
-                              {post.views}
+                              {post.view}
                             </div>
                             <div className='col-span-1 text-center text-sm text-gray-600'>
                               {/* 추천 수 표시 (추후 구현) */}0

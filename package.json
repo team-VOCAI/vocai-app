@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.8.0",
+    "@hookform/resolvers": "^5.1.1",
     "@prisma/client": "^6.10.0",
     "@tiptap/extension-color": "^2.24.0",
     "@tiptap/extension-highlight": "^2.24.0",
@@ -24,11 +25,15 @@
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.6.0",
     "jsonwebtoken": "^9.0.2",
+    "libphonenumber-js": "^1.12.10",
     "next": "15.3.3",
     "next-auth": "^5.0.0-beta.28",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-icons": "^5.5.0"
+    "react-hook-form": "^7.60.0",
+    "react-icons": "^5.5.0",
+    "validator": "^13.15.15",
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -38,6 +43,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/validator": "^13.15.2",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "prisma": "^6.11.1",
