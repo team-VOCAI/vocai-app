@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  // output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -9,30 +9,36 @@ datasource db {
 }
 
 model User {
-  userId    Int       @id @default(autoincrement())
-  loginId   String    @unique
-  password  String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  profile   Profile?
+  userId        Int       @id @default(autoincrement())
+  loginId       String?   @unique
+  password      String?
+  email         String?   @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  profile       Profile?
+  accounts      Account[]
+  sessions      Session[]
 
   @@map("users")
 }
 
 model Profile {
-  profileId Int       @id @default(autoincrement())
-  userId    Int       @unique
-  nickName  String    @unique
-  name      String
-  phoneNum  String
-  email     String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  comments  Comment[]
-  posts     Post[]
-  user      User      @relation(fields: [userId], references: [userId])
+  profileId             Int                    @id @default(autoincrement())
+  userId                Int                    @unique
+  nickName              String                 @unique
+  name                  String
+  phoneNum              String
+  email                 String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  comments              Comment[]
+  posts                 Post[]
+  user                  User                   @relation(fields: [userId], references: [userId])
   mockInterviewSessions MockInterviewSession[]
 
   @@map("profiles")
@@ -49,22 +55,22 @@ model Board {
 }
 
 model Post {
-  postId      Int      @id @default(autoincrement())
+  postId      Int          @id @default(autoincrement())
   profileId   Int
   boardId     Int
   nickName    String
   title       String
   content     String
-  view        Int      @default(0)
+  view        Int          @default(0)
   // 메타정보 필드 추가
-  company     String?  // 기업명 (선택사항)
-  jobCategory String?  // 직무 카테고리
-  tags        String?  // 태그 (쉼표로 구분)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  company     String? // 기업명 (선택사항)
+  jobCategory String? // 직무 카테고리
+  tags        String? // 태그 (쉼표로 구분)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
-  profile     Profile  @relation(fields: [profileId], references: [profileId])
-  board       Board    @relation(fields: [boardId], references: [boardId])
+  profile     Profile      @relation(fields: [profileId], references: [profileId])
+  board       Board        @relation(fields: [boardId], references: [boardId])
   comments    Comment[]
   attachments Attachment[]
 
@@ -95,7 +101,7 @@ model Attachment {
   fileName     String
   fileSize     Int
   fileType     String
-  fileData     Bytes    // PostgreSQL BYTEA 타입
+  fileData     Bytes // PostgreSQL BYTEA 타입
   createdAt    DateTime @default(now())
   post         Post     @relation(fields: [postId], references: [postId])
 
@@ -103,25 +109,63 @@ model Attachment {
 }
 
 model MockInterviewSession {
-  sessionId  Int                    @id @default(autoincrement())
-  profileId  Int                   
-  persona    Json
-  records    MockInterviewRecord[]
-  summary      String?
-  feedback     String?
-  createdAt    DateTime              @default(now())
-  deletedAt    DateTime?
-  profile    Profile               @relation(fields: [profileId], references: [profileId], onDelete: Cascade)
+  sessionId Int                   @id @default(autoincrement())
+  profileId Int
+  persona   Json
+  records   MockInterviewRecord[]
+  summary   String?
+  feedback  String?
+  createdAt DateTime              @default(now())
+  deletedAt DateTime?
+  profile   Profile               @relation(fields: [profileId], references: [profileId], onDelete: Cascade)
 }
 
 model MockInterviewRecord {
-  interviewId  Int                  @id @default(autoincrement())
-  sessionId    Int
-  question     String
-  answerText   String
-  summary      String?
-  feedback     String?
-  createdAt    DateTime            @default(now())
-  deletedAt    DateTime?
-  session      MockInterviewSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  interviewId Int                  @id @default(autoincrement())
+  sessionId   Int
+  question    String
+  answerText  String
+  summary     String?
+  feedback    String?
+  createdAt   DateTime             @default(now())
+  deletedAt   DateTime?
+  session     MockInterviewSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+}
+
+model Account {
+  id                Int     @id @default(autoincrement())
+  userId            Int?
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User?   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique
+  userId       Int?
+  expires      DateTime
+  user         User?    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }

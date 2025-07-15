@@ -1,8 +1,15 @@
+'use client';
+
 import React from 'react';
+import { signIn } from 'next-auth/react';
 import Navbar from '@/components/Navbar';
 import ContainerX from '@/components/ContainerX';
 
 export default function SignInPage() {
+  const handleGoogleSignIn = () => {
+    signIn('google', { callbackUrl: '/' });
+  };
+
   return (
     <div className='min-h-screen flex flex-col bg-[var(--gray-100)] font-pretendard'>
       <Navbar />
@@ -54,10 +61,10 @@ export default function SignInPage() {
             </p>
             {/* 구분선 */}
             <div className='my-6 border-t border-[var(--gray-300)]' />
-            {/* Google 로그인 버튼 (디자인 시스템 및 가이드라인 적용) */}
+            {/* Google 로그인 버튼 */}
             <button
               type='button'
-              // 실제 구글 로그인 연동 시 onClick에 signIn('google') 등 연결
+              onClick={handleGoogleSignIn}
               className='flex items-center justify-center w-full border border-[var(--input-border)] rounded-lg py-2 px-4 shadow-sm bg-white hover:bg-[var(--gray-100)] transition focus:outline-none focus:ring-2 focus:ring-[var(--primary)]'
               style={{
                 fontFamily: 'Roboto, Arial, sans-serif',
@@ -69,7 +76,6 @@ export default function SignInPage() {
                 alt='Google Logo'
                 className='w-5 h-5 mr-2'
               />
-              {/* 텍스트 색상을 더 진하게(Tailwind gray-800, #1F2937) */}
               <span className='text-sm font-medium text-[var(--text-primary)]'>
                 Google로 로그인
               </span>

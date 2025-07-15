@@ -16,8 +16,8 @@ export async function POST(req: Request) {
 
   // User에서 userId로 찾기
   const user = await prisma.user.findUnique({ where: { userId: profile.userId } });
-  if (!user) {
-    return NextResponse.json({ error: '존재하지 않는 계정입니다.' }, { status: 401 });
+  if (!user || !user.password) {
+    return NextResponse.json({ error: '존재하지 않는 계정이거나 비밀번호가 없습니다.' }, { status: 401 });
   }
 
   const isValid = await bcrypt.compare(password, user.password);
