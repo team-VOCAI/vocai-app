@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getProfileFromRequest } from "@/lib/getProfile";
-
+import { generateQuestion } from "@/lib/interview/generateQuestion";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,8 +11,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { persona } = body;
+    const { persona } = await req.json();
 
     if (!persona) {
       return NextResponse.json(
@@ -28,7 +27,21 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ sessionId: session.sessionId }, { status: 201 });
+    const question = await generateQuestion(session.sessionId);
+
+    // 첫 질문 저장 (answerText는 null)
+    await prisma.mockInterviewRecord.create({
+      data: {
+        sessionId: session.sessionId,
+        question,
+      },
+    });
+    
+    return NextResponse.json(
+      { sessionId: session.sessionId, question },
+      { status: 201 }
+    );
+
   } catch (error) {
     console.error("세션 생성 오류:", error);
     return NextResponse.json(
