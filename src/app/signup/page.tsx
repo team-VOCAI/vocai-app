@@ -1,74 +1,103 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { signupSchema, type SignupFormData } from '@/lib/schemas/auth';
+import { authAPI, ApiError, type DuplicateCheckResponse } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import ContainerX from '@/components/ContainerX';
 
 export default function SignUpPage() {
-  // 각 입력 필드의 상태 관리
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordCheck, setPasswordCheck] = useState('');
-  const [nickname, setNickname] = useState('');
-  const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
-
-  // 인증번호 입력 부분 표시 여부
+  const router = useRouter();
   const [showVerificationCode, setShowVerificationCode] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [emailCheckStatus, setEmailCheckStatus] = useState<{
+    checked: boolean;
+    available: boolean;
+    message: string;
+  }>({ checked: false, available: false, message: '' });
 
-  // 이메일 형식 검증 상태
-  const [isEmailValid, setIsEmailValid] = useState(false);
+  const [nicknameCheckStatus, setNicknameCheckStatus] = useState<{
+    checked: boolean;
+    available: boolean;
+    message: string;
+  }>({ checked: false, available: false, message: '' });
 
-  // 비밀번호 유효성 검사 상태
-  const [passwordValidation, setPasswordValidation] = useState({
-    length: false,
-    hasUpperCase: false,
-    hasLowerCase: false,
-    hasNumber: false,
-    hasSpecialChar: false,
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+    setValue,
+    trigger,
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+    mode: 'onChange',
   });
 
-  // 입력 필드 변경 핸들러 함수들
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEmail(value);
+  const watchedFields = watch();
+  const { email, password, passwordCheck, nickname, phone } = watchedFields;
 
-    // 이메일 형식 검증 (기본적인 이메일 정규표현식)
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    setIsEmailValid(emailRegex.test(value));
+  // 이메일 중복 확인
+  const handleEmailCheck = async () => {
+    const isEmailValid = await trigger('email');
+    if (!isEmailValid || !email) return;
+
+    try {
+      const response = await authAPI.checkEmailDuplicate(email);
+      const data = response.data as DuplicateCheckResponse;
+
+      setEmailCheckStatus({
+        checked: true,
+        available: data.available,
+        message: data.message,
+      });
+    } catch (error) {
+      console.error('이메일 중복확인 오류:', error);
+      setEmailCheckStatus({
+        checked: true,
+        available: false,
+        message: '중복 확인 중 오류가 발생했습니다.',
+      });
+    }
   };
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setPassword(value);
+  // 닉네임 중복 확인
+  const handleNicknameCheck = async () => {
+    const isNicknameValid = await trigger('nickname');
+    if (!isNicknameValid || !nickname) return;
 
-    // 실시간 비밀번호 유효성 검사
-    setPasswordValidation({
-      length: value.length >= 8 && value.length <= 64,
-      hasUpperCase: /[A-Z]/.test(value),
-      hasLowerCase: /[a-z]/.test(value),
-      hasNumber: /\d/.test(value),
-      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(value),
-    });
+    try {
+      const response = await authAPI.checkNicknameDuplicate(nickname);
+      const data = response.data as DuplicateCheckResponse;
+
+      setNicknameCheckStatus({
+        checked: true,
+        available: data.available,
+        message: data.message,
+      });
+    } catch (error) {
+      console.error('닉네임 중복확인 오류:', error);
+      setNicknameCheckStatus({
+        checked: true,
+        available: false,
+        message: '중복 확인 중 오류가 발생했습니다.',
+      });
+    }
   };
 
-  const handlePasswordCheckChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setPasswordCheck(e.target.value);
+  // 휴대폰 인증 버튼 클릭 핸들러
+  const handlePhoneVerification = () => {
+    setShowVerificationCode(true);
   };
 
-  const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNickname(e.target.value);
-  };
-
+  // 전화번호 포맷팅
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-
-    // 숫자만 추출
     const numbersOnly = value.replace(/[^\d]/g, '');
 
-    // 전화번호 포맷팅
     let formattedPhone = '';
     if (numbersOnly.length <= 3) {
       formattedPhone = numbersOnly;
@@ -81,38 +110,88 @@ export default function SignUpPage() {
       )}-${numbersOnly.slice(7, 11)}`;
     }
 
-    setPhone(formattedPhone);
+    setValue('phone', formattedPhone);
   };
 
-  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCode(e.target.value);
+  // 비밀번호 강도 계산
+  const getPasswordStrength = () => {
+    if (!password) return { strength: 0, conditions: [], isStrong: false };
+
+    const conditions = [
+      { name: '8자 이상', test: password.length >= 8 },
+      { name: '대문자 포함', test: /[A-Z]/.test(password) },
+      { name: '소문자 포함', test: /[a-z]/.test(password) },
+      { name: '숫자 포함', test: /\d/.test(password) },
+      { name: '특수문자 포함', test: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+    ];
+
+    const metConditions = conditions.filter((condition) => condition.test);
+    const strength = metConditions.length;
+    const isStrong = strength >= 3;
+
+    return { strength, conditions, isStrong };
   };
 
-  // 비밀번호 강도 확인
-  const isPasswordStrong = () => {
-    // 필수 조건: 길이 (8~64자)
-    if (!passwordValidation.length) return false;
+  const passwordStrength = getPasswordStrength();
 
-    // 선택 조건: 대문자/소문자/숫자/특수문자 중 2개 이상
-    const optionalValidCount = [
-      passwordValidation.hasUpperCase,
-      passwordValidation.hasLowerCase,
-      passwordValidation.hasNumber,
-      passwordValidation.hasSpecialChar,
-    ].filter(Boolean).length;
-
-    return optionalValidCount >= 2; // 필수 1개 + 선택 2개 = 총 3개 조건
+  // 비밀번호 개별 조건 검사
+  const passwordValidation = {
+    length: password ? password.length >= 8 && password.length <= 64 : false,
+    hasUpperCase: password ? /[A-Z]/.test(password) : false,
+    hasLowerCase: password ? /[a-z]/.test(password) : false,
+    hasNumber: password ? /\d/.test(password) : false,
+    hasSpecialChar: password ? /[!@#$%^&*(),.?":{}|<>]/.test(password) : false,
   };
 
-  // 비밀번호 일치 확인
-  const isPasswordMatch = () => {
-    return password === passwordCheck && passwordCheck.length > 0;
+  // 폼 제출 핸들러
+  const onSubmit = async (data: SignupFormData) => {
+    try {
+      // 에러 메시지 초기화
+      setSubmitError('');
+
+      // 중복확인 검증
+      if (!emailCheckStatus.checked || !emailCheckStatus.available) {
+        setSubmitError('이메일 중복확인을 완료해주세요.');
+        return;
+      }
+
+      if (!nicknameCheckStatus.checked || !nicknameCheckStatus.available) {
+        setSubmitError('닉네임 중복확인을 완료해주세요.');
+        return;
+      }
+
+      // 회원가입 API 호출 (authAPI 사용)
+      await authAPI.signup({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        nickname: data.nickname,
+        phone: data.phone,
+      });
+
+      // 성공 시 로그인 페이지로 리다이렉트
+      alert('회원가입이 완료되었습니다.');
+      router.push('/signin');
+    } catch (error) {
+      console.error('회원가입 오류:', error);
+
+      // ApiError 타입 체크 및 에러 메시지 처리
+      if (error instanceof ApiError) {
+        setSubmitError(error.message);
+      } else {
+        setSubmitError('회원가입 중 오류가 발생했습니다.');
+      }
+    }
   };
 
-  // 휴대폰 인증 버튼 클릭 핸들러
-  const handlePhoneVerification = () => {
-    setShowVerificationCode(true);
-  };
+  // 이메일이나 닉네임 값이 변경되면 중복확인 상태 초기화
+  React.useEffect(() => {
+    setEmailCheckStatus((prev) => ({ ...prev, checked: false }));
+  }, [email]);
+
+  React.useEffect(() => {
+    setNicknameCheckStatus((prev) => ({ ...prev, checked: false }));
+  }, [nickname]);
 
   return (
     <div className='min-h-screen flex flex-col bg-[var(--gray-100)] font-pretendard'>
@@ -124,8 +203,34 @@ export default function SignUpPage() {
             <h1 className='text-3xl font-bold text-center text-[var(--text-primary)] mb-8 tracking-tight'>
               회원가입
             </h1>
-            <form className='flex flex-col gap-5'>
-              {/* 아이디 */}
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className='flex flex-col gap-5'
+            >
+              {/* 이름 */}
+              <div>
+                <label
+                  htmlFor='name'
+                  className='block mb-2 text-sm font-medium text-[var(--text-secondary)]'
+                >
+                  이름
+                </label>
+                <input
+                  id='name'
+                  type='text'
+                  placeholder='실명 입력'
+                  {...register('name')}
+                  className='w-full h-12 px-4 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus-ring)] font-medium text-base transition'
+                  autoComplete='name'
+                />
+                {errors.name && (
+                  <p className='text-sm mt-1 text-[var(--text-error)]'>
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
+
+              {/* 아이디 (이메일) */}
               <div>
                 <label
                   htmlFor='email'
@@ -136,21 +241,18 @@ export default function SignUpPage() {
                 <div className='flex gap-2'>
                   <input
                     id='email'
-                    name='email'
                     type='email'
                     placeholder='이메일 입력'
-                    value={email}
-                    onChange={handleEmailChange}
+                    {...register('email')}
                     className='flex-1 h-12 px-4 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus-ring)] font-medium text-base transition'
                     autoComplete='email'
-                    aria-label='이메일'
-                    required
                   />
                   <button
                     type='button'
-                    disabled={!email.trim() || !isEmailValid}
+                    onClick={handleEmailCheck}
+                    disabled={!email || !!errors.email}
                     className={`w-24 py-2 rounded-lg font-medium transition whitespace-nowrap ${
-                      email.trim() && isEmailValid
+                      email && !errors.email
                         ? 'border border-[var(--primary)] bg-white text-[var(--text-accent)] hover:bg-[var(--primary)] hover:text-[var(--text-inverse)]'
                         : 'border border-[var(--button-disabled-border)] bg-[var(--button-disabled-bg)] text-[var(--button-disabled-text)] cursor-not-allowed'
                     }`}
@@ -158,18 +260,21 @@ export default function SignUpPage() {
                     중복확인
                   </button>
                 </div>
-                {/* 이메일 형식 확인 메시지 */}
-                {email && (
+                {errors.email && (
+                  <p className='text-sm mt-1 text-[var(--text-error)]'>
+                    {errors.email.message}
+                  </p>
+                )}
+                {emailCheckStatus.checked && (
                   <p
                     className={`text-sm mt-1 ${
-                      isEmailValid
+                      emailCheckStatus.available
                         ? 'text-[var(--success)]'
                         : 'text-[var(--text-error)]'
                     }`}
                   >
-                    {isEmailValid
-                      ? '✓ 올바른 이메일 형식입니다.'
-                      : '✗ 이메일 형식으로 작성해주세요. (예: example@domain.com)'}
+                    {emailCheckStatus.available ? '✓' : '✗'}{' '}
+                    {emailCheckStatus.message}
                   </p>
                 )}
               </div>
@@ -184,33 +289,35 @@ export default function SignUpPage() {
                 </label>
                 <input
                   id='password'
-                  name='password'
                   type='password'
                   placeholder='비밀번호 입력'
-                  value={password}
-                  onChange={handlePasswordChange}
+                  {...register('password')}
                   maxLength={64}
                   className='w-full h-12 px-4 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus-ring)] font-medium text-base transition'
                   autoComplete='new-password'
-                  aria-label='비밀번호'
-                  required
                 />
+                {errors.password && (
+                  <p className='text-sm mt-1 text-[var(--text-error)]'>
+                    {errors.password.message}
+                  </p>
+                )}
 
                 {/* 비밀번호 강도 인디케이터 */}
                 {password && (
                   <div className='mt-3 p-3 bg-[var(--gray-50)] rounded-lg border border-[var(--input-border)]'>
                     <div className='flex items-center justify-between mb-2'>
                       <p className='text-xs font-medium text-[var(--text-secondary)]'>
-                        비밀번호 강도: {isPasswordStrong() ? '강함' : '약함'}
+                        비밀번호 강도:{' '}
+                        {passwordStrength.isStrong ? '강함' : '약함'}
                       </p>
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          isPasswordStrong()
+                          passwordStrength.isStrong
                             ? 'bg-[var(--success)] text-white'
                             : 'bg-[var(--text-error)] text-white'
                         }`}
                       >
-                        {isPasswordStrong() ? '✓ 통과' : '✗ 부족'}
+                        {passwordStrength.isStrong ? '✓ 통과' : '✗ 부족'}
                       </span>
                     </div>
                     <div className='space-y-2'>
@@ -304,31 +411,27 @@ export default function SignUpPage() {
                 </label>
                 <input
                   id='passwordCheck'
-                  name='passwordCheck'
                   type='password'
                   placeholder='비밀번호 재입력'
-                  value={passwordCheck}
-                  onChange={handlePasswordCheckChange}
+                  {...register('passwordCheck')}
                   maxLength={64}
                   className='w-full h-12 px-4 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus-ring)] font-medium text-base transition'
                   autoComplete='new-password'
-                  aria-label='비밀번호 재확인'
-                  required
                 />
-                {/* 비밀번호 일치 확인 메시지 */}
-                {passwordCheck && (
-                  <p
-                    className={`text-sm mt-1 ${
-                      isPasswordMatch()
-                        ? 'text-[var(--success)]'
-                        : 'text-[var(--text-error)]'
-                    }`}
-                  >
-                    {isPasswordMatch()
-                      ? '✓ 비밀번호가 일치합니다.'
-                      : '✗ 비밀번호가 일치하지 않습니다.'}
+                {errors.passwordCheck && (
+                  <p className='text-sm mt-1 text-[var(--text-error)]'>
+                    {errors.passwordCheck.message}
                   </p>
                 )}
+                {/* 비밀번호 일치 확인 메시지 - 일치할 때만 표시 */}
+                {passwordCheck &&
+                  password &&
+                  password === passwordCheck &&
+                  !errors.passwordCheck && (
+                    <p className='text-sm mt-1 text-[var(--success)]'>
+                      ✓ 비밀번호가 일치합니다.
+                    </p>
+                  )}
               </div>
 
               {/* 닉네임 */}
@@ -342,21 +445,18 @@ export default function SignUpPage() {
                 <div className='flex gap-2'>
                   <input
                     id='nickname'
-                    name='nickname'
                     type='text'
                     placeholder='닉네임 입력'
-                    value={nickname}
-                    onChange={handleNicknameChange}
+                    {...register('nickname')}
                     className='flex-1 h-12 px-4 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus-ring)] font-medium text-base transition'
                     autoComplete='nickname'
-                    aria-label='닉네임'
-                    required
                   />
                   <button
                     type='button'
-                    disabled={!nickname.trim()}
+                    onClick={handleNicknameCheck}
+                    disabled={!nickname || !!errors.nickname}
                     className={`w-24 py-2 rounded-lg font-medium transition whitespace-nowrap ${
-                      nickname.trim()
+                      nickname && !errors.nickname
                         ? 'border border-[var(--primary)] bg-white text-[var(--text-accent)] hover:bg-[var(--primary)] hover:text-[var(--text-inverse)]'
                         : 'border border-[var(--button-disabled-border)] bg-[var(--button-disabled-bg)] text-[var(--button-disabled-text)] cursor-not-allowed'
                     }`}
@@ -364,6 +464,23 @@ export default function SignUpPage() {
                     중복확인
                   </button>
                 </div>
+                {errors.nickname && (
+                  <p className='text-sm mt-1 text-[var(--text-error)]'>
+                    {errors.nickname.message}
+                  </p>
+                )}
+                {nicknameCheckStatus.checked && (
+                  <p
+                    className={`text-sm mt-1 ${
+                      nicknameCheckStatus.available
+                        ? 'text-[var(--success)]'
+                        : 'text-[var(--text-error)]'
+                    }`}
+                  >
+                    {nicknameCheckStatus.available ? '✓' : '✗'}{' '}
+                    {nicknameCheckStatus.message}
+                  </p>
+                )}
               </div>
 
               {/* 전화번호 */}
@@ -377,23 +494,20 @@ export default function SignUpPage() {
                 <div className='flex gap-2'>
                   <input
                     id='phone'
-                    name='phone'
                     type='tel'
                     placeholder="'-' 빼고 전화번호 입력"
-                    value={phone}
+                    {...register('phone')}
                     onChange={handlePhoneChange}
                     maxLength={13}
                     className='flex-1 h-12 px-4 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus-ring)] font-medium text-base transition'
                     autoComplete='tel'
-                    aria-label='전화번호'
-                    required
                   />
                   <button
                     type='button'
-                    disabled={!phone.trim()}
+                    disabled={!phone}
                     onClick={handlePhoneVerification}
                     className={`w-24 py-2 rounded-lg font-medium transition whitespace-nowrap ${
-                      phone.trim()
+                      phone
                         ? 'border border-[var(--primary)] bg-white text-[var(--text-accent)] hover:bg-[var(--primary)] hover:text-[var(--text-inverse)]'
                         : 'border border-[var(--button-disabled-border)] bg-[var(--button-disabled-bg)] text-[var(--button-disabled-text)] cursor-not-allowed'
                     }`}
@@ -401,6 +515,11 @@ export default function SignUpPage() {
                     휴대폰 인증
                   </button>
                 </div>
+                {errors.phone && (
+                  <p className='text-sm mt-1 text-[var(--text-error)]'>
+                    {errors.phone.message}
+                  </p>
+                )}
               </div>
 
               {/* 인증번호 - 휴대폰 인증 버튼 클릭 시에만 표시 */}
@@ -415,20 +534,16 @@ export default function SignUpPage() {
                   <div className='flex gap-2'>
                     <input
                       id='code'
-                      name='code'
                       type='text'
                       placeholder='인증번호 입력'
-                      value={code}
-                      onChange={handleCodeChange}
+                      {...register('code')}
                       className='flex-1 h-12 px-4 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--input-focus-ring)] font-medium text-base transition'
-                      aria-label='인증번호'
-                      required
                     />
                     <button
                       type='button'
-                      disabled={!code.trim()}
+                      disabled={!watchedFields.code}
                       className={`w-24 py-2 rounded-lg font-medium transition whitespace-nowrap ${
-                        code.trim()
+                        watchedFields.code
                           ? 'border border-[var(--primary)] bg-white text-[var(--text-accent)] hover:bg-[var(--primary)] hover:text-[var(--text-inverse)]'
                           : 'border border-[var(--button-disabled-border)] bg-[var(--button-disabled-bg)] text-[var(--button-disabled-text)] cursor-not-allowed'
                       }`}
@@ -436,15 +551,28 @@ export default function SignUpPage() {
                       인증 확인
                     </button>
                   </div>
+                  {errors.code && (
+                    <p className='text-sm mt-1 text-[var(--text-error)]'>
+                      {errors.code.message}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* 에러 메시지 */}
+              {submitError && (
+                <div className='p-3 bg-red-50 border border-red-200 rounded-lg'>
+                  <p className='text-sm text-red-600'>{submitError}</p>
                 </div>
               )}
 
               {/* 회원가입 버튼 */}
               <button
                 type='submit'
-                className='w-full py-2 mt-2 bg-[var(--primary)] text-[var(--text-inverse)] font-semibold rounded hover:bg-[var(--primary-hover)] transition-colors'
+                disabled={isSubmitting}
+                className='w-full py-2 mt-2 bg-[var(--primary)] text-[var(--text-inverse)] font-semibold rounded hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
               >
-                회원가입 하기
+                {isSubmitting ? '처리 중...' : '회원가입 하기'}
               </button>
             </form>
 
