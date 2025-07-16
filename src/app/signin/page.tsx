@@ -162,11 +162,6 @@ export default function SignInPage() {
             <button
               type='button'
               onClick={handleGoogleSignIn}
-              className='flex items-center justify-center w-full border border-[var(--input-border)] rounded-lg py-2 px-4 shadow-sm bg-white hover:bg-[var(--gray-100)] transition focus:outline-none focus:ring-2 focus:ring-[var(--primary)]'
-></button>
-            {/* Google 로그인 버튼 (향후 구현 예정) */}
-            <button
-              type='button'
               disabled={isSubmitting}
               className={`flex items-center justify-center w-full border border-[var(--input-border)] rounded-lg py-2 px-4 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-[var(--primary)] ${
                 isSubmitting
