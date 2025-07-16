@@ -36,6 +36,10 @@ export async function POST(req: Request) {
         data: {
           loginId: email,
           password: hashedPassword,
+          email: email,
+          name: '',
+          image: '',
+          emailVerified: undefined,
         },
       });
       // 2. Profile 생성

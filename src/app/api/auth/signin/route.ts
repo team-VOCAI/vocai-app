@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '존재하지 않는 계정입니다.' }, { status: 401 });
   }
 
-  const isValid = await bcrypt.compare(password, user.password);
+  const isValid = await bcrypt.compare(password, user.password ?? '');
   if (!isValid) {
     return NextResponse.json({ error: '비밀번호가 일치하지 않습니다.' }, { status: 401 });
   }

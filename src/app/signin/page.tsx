@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +12,9 @@ import { signinSchema, type SigninFormData } from '@/lib/schemas/auth';
 import { authAPI, ApiError } from '@/lib/api';
 
 export default function SignInPage() {
+  const handleGoogleSignIn = () => {
+    signIn('google', { callbackUrl: '/' });
+  };
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -153,10 +158,10 @@ export default function SignInPage() {
 
             {/* 구분선 */}
             <div className='my-6 border-t border-[var(--gray-300)]' />
-
-            {/* Google 로그인 버튼 (향후 구현 예정) */}
+            {/* Google 로그인 버튼 */}
             <button
               type='button'
+              onClick={handleGoogleSignIn}
               disabled={isSubmitting}
               className={`flex items-center justify-center w-full border border-[var(--input-border)] rounded-lg py-2 px-4 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-[var(--primary)] ${
                 isSubmitting
