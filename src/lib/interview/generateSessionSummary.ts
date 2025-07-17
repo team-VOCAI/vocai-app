@@ -1,6 +1,18 @@
 import { genAI } from "@/lib/gemini";
 
-export async function generateSessionSummary(persona: any, records: { question: string; answerText: string | null }[]) {
+// Persona 타입 정의
+type Persona = {
+  company: string;
+  job: string;
+  careerLevel: string;
+  difficulty: "쉬움" | "중간" | "어려움";
+  techStack: string[];
+};
+
+export async function generateSessionSummary(
+  persona: Persona,
+  records: { question: string; answerText: string | null }[]
+) {
   const history = records
     .map((r, i) => `질문 ${i + 1}: ${r.question}\n답변: ${r.answerText ?? ""}`)
     .join("\n\n");
@@ -32,7 +44,6 @@ export async function generateSessionSummary(persona: any, records: { question: 
 
   const summaryMatch = text.match(/요약:\s*\n?([\s\S]*?)\n+피드백:/i);
   const feedbackMatch = text.match(/피드백:\s*\n?([\s\S]*)/i);
-
 
   const summary = summaryMatch?.[1]?.trim() || "요약을 찾을 수 없습니다.";
   const feedback = feedbackMatch?.[1]?.trim() || "피드백을 찾을 수 없습니다.";

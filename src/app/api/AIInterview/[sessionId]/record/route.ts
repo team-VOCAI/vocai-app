@@ -40,7 +40,10 @@ export async function POST(
     const audio = formData.get("file") as Blob | null;
 
     if (!audio) {
-      return NextResponse.json({ error: "audio 파일이 필요합니다." }, { status: 400 });
+      return NextResponse.json(
+        { error: "audio 파일이 필요합니다." },
+        { status: 400 }
+      );
     }
 
     const text = await transcribeAudio(audio);
@@ -51,15 +54,24 @@ export async function POST(
       body: JSON.stringify({ answerText: text }),
     });
 
-    const res = await answerPost(answerReq, { params: Promise.resolve({ sessionId }) });
+    const res = await answerPost(answerReq, {
+      params: Promise.resolve({ sessionId }),
+    });
     const data = await res.json();
 
     return NextResponse.json(
       { ...data, transcribedText: text },
       { status: res.status }
     );
-  } catch (error: any) {
-    console.error("record API 오류:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("세션 종료 오류:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(
+      { error: "Unknown error occurred" },
+      { status: 500 }
+    );
   }
 }

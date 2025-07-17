@@ -18,7 +18,7 @@ export async function GET(
   const numericPostId = Number(postId);
 
   const post = await prisma.post.findUnique({
-    where: { postId: Number(postId) },
+    where: { postId: numericPostId },
     include: {
       profile: true,
       board: true,
