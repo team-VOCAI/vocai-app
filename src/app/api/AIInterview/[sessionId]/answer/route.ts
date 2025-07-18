@@ -48,8 +48,15 @@ export async function POST(
     });
 
     return NextResponse.json({ summary, feedback, record: updated });
-  } catch (error: any) {
-    console.error("answer API 오류:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("세션 종료 오류:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(
+      { error: "Unknown error occurred" },
+      { status: 500 }
+    );
   }
 }
