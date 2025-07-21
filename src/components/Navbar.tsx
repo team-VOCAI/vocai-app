@@ -1,12 +1,86 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { authAPI, userAPI, ApiError } from '@/lib/api';
+
+// 사용자 프로필 타입 정의
+interface UserProfile {
+  name?: string;
+  nickName?: string;
+  email?: string;
+}
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const isCommunityPage = pathname.startsWith('/community');
+
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [userInfo, setUserInfo] = useState<{
+    name?: string;
+    email?: string;
+  } | null>(null);
+
+  // 컴포넌트 마운트 시 토큰 확인
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      console.log('🔍 인증 상태 확인 시작');
+
+      // HttpOnly 쿠키는 클라이언트에서 읽을 수 없으므로
+      // 서버 API를 호출하여 인증 상태 확인
+      try {
+        console.log('🔑 서버에서 토큰 유효성 확인 중...');
+        const response = await userAPI.getProfile();
+
+        console.log('📡 API 응답 상태:', response.status);
+        const data = response.data as UserProfile;
+        console.log('👤 받은 사용자 정보:', data);
+
+        setIsLoggedIn(true);
+        setUserInfo({
+          name: data.name || data.nickName,
+          email: data.email,
+        });
+        console.log('✅ 로그인 상태로 설정됨');
+      } catch (error) {
+        if (error instanceof ApiError) {
+          console.log('❌ 인증 실패:', error.status);
+        } else {
+          console.log('❌ 네트워크 오류:', error);
+        }
+        setIsLoggedIn(false);
+        setUserInfo(null);
+      }
+
+      setIsLoading(false);
+      console.log('🏁 인증 상태 확인 완료');
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  // 로그아웃 처리
+  const handleLogout = async () => {
+    try {
+      console.log('🚪 로그아웃 처리 중...');
+      // 서버에 로그아웃 요청 (HttpOnly 쿠키 삭제)
+      await authAPI.signout();
+      console.log('✅ 서버에서 로그아웃 성공');
+    } catch {
+      console.log('⚠️ 서버 로그아웃 실패, 클라이언트 상태만 초기화');
+    } finally {
+      // 클라이언트 상태 초기화
+      setIsLoggedIn(false);
+      setUserInfo(null);
+      console.log('🔄 클라이언트 상태 초기화 완료');
+
+      // 메인 페이지로 이동
+      router.push('/');
+    }
+  };
 
   return (
     <nav className='fixed top-0 left-0 w-full z-50 border-b border-[var(--gray-300)] bg-white shadow-sm'>
@@ -40,13 +114,48 @@ export default function Navbar() {
             </a>
           </div>
         </div>
+
         <div className='flex items-center gap-2'>
-          <Link
-            href='/signin'
-            className='text-base font-semibold text-[var(--text-accent)] px-4 py-2 rounded-lg border border-[var(--primary)] bg-white hover:bg-[var(--primary)] hover:text-[var(--text-inverse)] transition-colors focus:outline-none'
-          >
-            로그인/회원가입
-          </Link>
+          {isLoading ? (
+            // 로딩 상태
+            <div className='w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin'></div>
+          ) : isLoggedIn ? (
+            // 로그인된 상태 - 마이페이지와 로그아웃 버튼
+            <div className='flex items-center gap-2'>
+              {/* 사용자 정보 표시 */}
+              <div className='hidden md:flex items-center gap-2 pr-4'>
+                <span className='font-medium text-gray-600'>
+                  {userInfo?.name}님
+                </span>
+              </div>
+
+              {/* 마이페이지 버튼 */}
+              <Link
+                href='/mypage'
+                className='text-base font-medium text-[var(--text-secondary)] px-2 py-1 rounded hover:bg-[var(--gray-100)] hover:text-[var(--text-accent)] transition-colors focus:outline-none'
+                title='마이페이지'
+              >
+                MY
+              </Link>
+
+              {/* 로그아웃 버튼 */}
+              <button
+                onClick={handleLogout}
+                className='px-2 py-1 font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors'
+                title='로그아웃'
+              >
+                로그아웃
+              </button>
+            </div>
+          ) : (
+            // 로그인되지 않은 상태 - 로그인/회원가입 버튼
+            <Link
+              href='/signin'
+              className='text-base font-semibold text-[var(--text-accent)] px-4 py-2 rounded-lg border border-[var(--primary)] bg-white hover:bg-[var(--primary)] hover:text-[var(--text-inverse)] transition-colors focus:outline-none'
+            >
+              로그인/회원가입
+            </Link>
+          )}
         </div>
       </div>
     </nav>
