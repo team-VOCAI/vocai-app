@@ -2,8 +2,9 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
+import type { NextAuthConfig } from "next-auth";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const authOptions: NextAuthConfig = {
   adapter: PrismaAdapter(prisma), // Prisma와 연동
   providers: [
     GoogleProvider({
@@ -13,7 +14,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     // 구글 로그인 시 User/Profile 자동 생성 및 이메일 중복 계정 자동 연결
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile }: any) {
       if (account?.provider === "google") {
         const googleId = profile?.sub || user.id;
         if (!googleId) return false;
@@ -74,12 +75,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
     // 세션에 사용자 id 추가
-    async session({ session, user }) {
+    async session({ session, user }: any) {
       if (session.user) session.user.id = user.id;
       return session;
     },
     // JWT 토큰에 사용자 id 추가
-    async jwt({ token, user }) {
+    async jwt({ token, user }: any) {
       if (user) token.id = user.id;
       return token;
     },
@@ -88,4 +89,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: '/signin',
   },
-});
+};
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);

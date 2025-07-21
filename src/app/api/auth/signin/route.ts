@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
   // User에서 userId로 찾기
   const user = await prisma.user.findUnique({ where: { userId: profile.userId } });
-  if (!user) {
+  if (!user || user.deletedAt) {
     return NextResponse.json({ error: '존재하지 않는 계정입니다.' }, { status: 401 });
   }
 
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
   // JWT 토큰 발급
   const token = jwt.sign(
-    { userId: user.userId},
+    { userId: user.userId },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
