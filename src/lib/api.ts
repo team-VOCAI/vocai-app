@@ -97,8 +97,13 @@ apiClient.interceptors.response.use(
       const userMessage = getErrorMessage(status, url, serverMessage);
 
       // 특별한 처리가 필요한 상태 코드들
-      if (status === 401 && !url?.includes('/auth/signin')) {
+      if (
+        status === 401 &&
+        !url?.includes('/auth/signin') &&
+        !url?.includes('/user/profile')
+      ) {
         // 로그인이 아닌 다른 요청에서 401이 발생하면 로그인 페이지로 이동
+        // 단, /user/profile은 제외 (인증 상태 확인용이므로 정상적인 401)
         console.warn('🔒 토큰이 만료되었습니다. 로그인 페이지로 이동합니다.');
         setTimeout(() => {
           if (typeof window !== 'undefined') {
@@ -208,7 +213,7 @@ export const authAPI = {
     });
   },
 
-  // 로그아웃 (향후 구현)
+  // 로그아웃
   signout: async () => {
     return apiClient.post('/auth/signout');
   },
@@ -225,6 +230,14 @@ export const authAPI = {
     return apiClient.get('/auth/check-nickname', {
       params: { nickname },
     });
+  },
+};
+
+// 사용자 관련 API
+export const userAPI = {
+  // 사용자 프로필 조회
+  getProfile: async () => {
+    return apiClient.get('/user/profile');
   },
 };
 
