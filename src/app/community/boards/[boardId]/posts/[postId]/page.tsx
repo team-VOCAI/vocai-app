@@ -16,7 +16,7 @@ import {
 } from 'react-icons/hi2';
 import Navbar from '@/components/Navbar';
 import { CommunitySidebar } from '@/features/community/components';
-import { boardAPI, commentAPI } from '@/lib/api';
+import { boardAPI, commentAPI, userAPI } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 
 interface PostDetailPageProps {
@@ -38,8 +38,11 @@ interface PostDetail {
   company?: string;
   jobCategory?: string;
   tags?: string;
+  profile: {
+    userId: number;
+  };
   attachments?: Array<{
-    attachmentId: number;
+    attachmentId: string;
     fileName: string;
     fileSize: number;
     fileType: string;
@@ -124,6 +127,26 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ userId?: number } | null>(
+    null
+  );
+
+  // 현재 사용자 정보 가져오기
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await userAPI.getProfile();
+        const userData = response.data as { userId?: number };
+        setCurrentUser(userData);
+      } catch (error) {
+        // 로그인하지 않은 경우 무시
+        console.log('사용자 정보 조회 실패:', error);
+        setCurrentUser(null);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   // 게시글 상세 정보 가져오기
   useEffect(() => {
@@ -188,7 +211,7 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
   };
 
   // 파일 다운로드
-  const handleFileDownload = async (attachmentId: number, fileName: string) => {
+  const handleFileDownload = async (attachmentId: string, fileName: string) => {
     try {
       const response = await fetch(`/api/attachments/${attachmentId}`, {
         method: 'GET',
@@ -222,6 +245,11 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
       isLiked: !post.isLiked,
       likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1,
     });
+  };
+
+  // 작성자인지 확인하는 함수
+  const isAuthor = () => {
+    return currentUser && post && currentUser.userId === post.profile.userId;
   };
 
   if (!board) {
@@ -421,14 +449,20 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
                       <HiHandThumbUp className='w-4 h-4' />
                       추천 {post.likeCount}
                     </button>
-                    <button className='flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium bg-[var(--button-primary-bg)] text-[var(--text-accent)] hover:bg-[var(--button-primary-bg-hover)] transition-colors duration-200'>
-                      <HiPencilSquare className='w-4 h-4' />
-                      수정
-                    </button>
-                    <button className='flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium bg-[var(--button-error-bg)] text-[var(--text-error)] hover:bg-[var(--button-error-bg-hover)] transition-colors duration-200'>
-                      <HiTrash className='w-4 h-4' />
-                      삭제
-                    </button>
+
+                    {/* 작성자에게만 수정/삭제 버튼 표시 */}
+                    {isAuthor() && (
+                      <>
+                        <button className='flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium bg-[var(--button-primary-bg)] text-[var(--text-accent)] hover:bg-[var(--button-primary-bg-hover)] transition-colors duration-200'>
+                          <HiPencilSquare className='w-4 h-4' />
+                          수정
+                        </button>
+                        <button className='flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium bg-[var(--button-error-bg)] text-[var(--text-error)] hover:bg-[var(--button-error-bg-hover)] transition-colors duration-200'>
+                          <HiTrash className='w-4 h-4' />
+                          삭제
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
