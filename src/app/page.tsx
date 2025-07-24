@@ -54,9 +54,17 @@ const bannerSlides: BannerData[] = [
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // 4초마다 자동으로 다음 슬라이드로 전환
+  // 컴포넌트가 마운트되었는지 확인하여 hydration mismatch 방지
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // 4초마다 자동으로 다음 슬라이드로 전환 (클라이언트에서만)
+  useEffect(() => {
+    if (!isMounted) return;
+
     const timer = setInterval(() => {
       setIsTransitioning(true);
 
@@ -68,11 +76,11 @@ export default function Home() {
     }, 4000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [isMounted]);
 
   // 수동 슬라이드 변경 함수
   const handleSlideChange = (index: number) => {
-    if (index === currentSlide || isTransitioning) return;
+    if (index === currentSlide || isTransitioning || !isMounted) return;
 
     setIsTransitioning(true);
     setTimeout(() => {
@@ -137,22 +145,26 @@ export default function Home() {
         </ContainerX>
 
         {/* 페이지네이션 점들 - 배너 하단 고정 */}
-        <div className='absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10'>
-          <div className='flex justify-center gap-2'>
-            {bannerSlides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => handleSlideChange(index)}
-                disabled={isTransitioning}
-                className={`rounded-full transition-all duration-500 ease-out ${
-                  index === currentSlide
-                    ? 'bg-white w-8 h-2'
-                    : 'bg-white/50 hover:bg-white/70 w-2 h-2'
-                } ${isTransitioning ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-              />
-            ))}
+        {isMounted && (
+          <div className='absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10'>
+            <div className='flex justify-center gap-2'>
+              {bannerSlides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSlideChange(index)}
+                  disabled={isTransitioning}
+                  className={`rounded-full transition-all duration-500 ease-out ${
+                    index === currentSlide
+                      ? 'bg-white w-8 h-2'
+                      : 'bg-white/50 hover:bg-white/70 w-2 h-2'
+                  } ${
+                    isTransitioning ? 'cursor-not-allowed' : 'cursor-pointer'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* 서비스 소개 섹션 */}
