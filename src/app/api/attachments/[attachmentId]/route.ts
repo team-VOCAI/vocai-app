@@ -7,18 +7,17 @@ export async function GET(
 ) {
   try {
     const { attachmentId } = await context.params;
-    const numAttachmentId = Number(attachmentId);
 
-    if (isNaN(numAttachmentId)) {
+    if (!attachmentId) {
       return NextResponse.json(
-        { message: 'attachmentId가 유효하지 않습니다.' },
+        { message: 'attachmentId가 필요합니다.' },
         { status: 400 }
       );
     }
 
-    // 첨부파일 조회
+    // 첨부파일 조회 (attachmentId는 String 타입)
     const attachment = await prisma.attachment.findUnique({
-      where: { attachmentId: numAttachmentId },
+      where: { attachmentId },
     });
 
     if (!attachment) {

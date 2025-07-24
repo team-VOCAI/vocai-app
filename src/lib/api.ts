@@ -138,11 +138,7 @@ export const boardAPI = {
 
   // 게시글 목록 조회
   getPosts: async (boardId: string) => {
-    const response = await fetch(`/api/boards/${boardId}/posts`);
-    if (!response.ok) {
-      throw new Error('게시글 목록을 불러오는데 실패했습니다.');
-    }
-    return { data: await response.json() };
+    return apiClient.get(`/boards/${boardId}/posts`);
   },
 
   // 게시글 검색
@@ -164,11 +160,7 @@ export const boardAPI = {
 
   // 게시판 목록별 게시글 수 조회
   getStats: async () => {
-    const response = await fetch('/api/boards/stats');
-    if (!response.ok) {
-      throw new Error('게시판 통계를 불러오는데 실패했습니다.');
-    }
-    return { data: await response.json() };
+    return apiClient.get('/boards/stats');
   },
 };
 
