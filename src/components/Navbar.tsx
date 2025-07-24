@@ -18,9 +18,8 @@ export default function Navbar() {
   const isCommunityPage = pathname.startsWith('/community');
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [userInfo, setUserInfo] = useState<{
-    name?: string;
+    nickName?: string;
     email?: string;
   } | null>(null);
 
@@ -41,7 +40,7 @@ export default function Navbar() {
 
         setIsLoggedIn(true);
         setUserInfo({
-          name: data.name || data.nickName,
+          nickName: data.nickName,
           email: data.email,
         });
         console.log('✅ 로그인 상태로 설정됨');
@@ -55,7 +54,6 @@ export default function Navbar() {
         setUserInfo(null);
       }
 
-      setIsLoading(false);
       console.log('🏁 인증 상태 확인 완료');
     };
 
@@ -116,16 +114,13 @@ export default function Navbar() {
         </div>
 
         <div className='flex items-center gap-2'>
-          {isLoading ? (
-            // 로딩 상태
-            <div className='w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin'></div>
-          ) : isLoggedIn ? (
+          {isLoggedIn ? (
             // 로그인된 상태 - 마이페이지와 로그아웃 버튼
             <div className='flex items-center gap-2'>
               {/* 사용자 정보 표시 */}
               <div className='hidden md:flex items-center gap-2 pr-4'>
                 <span className='font-medium text-gray-600'>
-                  {userInfo?.name}님
+                  {userInfo?.nickName}님
                 </span>
               </div>
 
@@ -148,7 +143,7 @@ export default function Navbar() {
               </button>
             </div>
           ) : (
-            // 로그인되지 않은 상태 - 로그인/회원가입 버튼
+            // 로그인되지 않은 상태 또는 로딩 중 - 로그인/회원가입 버튼
             <Link
               href='/signin'
               className='text-base font-semibold text-[var(--text-accent)] px-4 py-2 rounded-lg border border-[var(--primary)] bg-white hover:bg-[var(--primary)] hover:text-[var(--text-inverse)] transition-colors focus:outline-none'
