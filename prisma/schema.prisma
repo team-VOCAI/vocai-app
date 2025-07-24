@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  // output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -12,15 +11,15 @@ model User {
   userId        Int       @id @default(autoincrement())
   loginId       String?   @unique
   password      String?
-  email         String?   @unique
-  name          String?
-  image         String?
-  emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
-  profile       Profile?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  name          String?
   accounts      Account[]
+  profile       Profile?
   sessions      Session[]
 
   @@map("users")
@@ -32,15 +31,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -66,8 +64,8 @@ model Profile {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
-  posts     Post[]
   comments  Comment[]
+  posts     Post[]
   user      User      @relation(fields: [userId], references: [userId])
 
   @@map("profiles")
@@ -83,19 +81,23 @@ model Board {
 }
 
 model Post {
-  postId    Int       @id @default(autoincrement())
-  profileId Int
-  boardId   Int
-  nickName  String
-  title     String
-  content   String
-  view      Int       @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  profile   Profile   @relation(fields: [profileId], references: [profileId])
-  board     Board     @relation(fields: [boardId], references: [boardId])
-  comments  Comment[]
+  postId      Int          @id @default(autoincrement())
+  profileId   Int
+  boardId     Int
+  nickName    String
+  title       String
+  content     String
+  view        Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  company     String?
+  jobCategory String?
+  tags        String?
+  attachments Attachment[]
+  comments    Comment[]
+  board       Board        @relation(fields: [boardId], references: [boardId])
+  profile     Profile      @relation(fields: [profileId], references: [profileId])
 
   @@map("posts")
 }
@@ -116,11 +118,14 @@ model Comment {
 }
 
 model Attachment {
-  attachmentId String @id @default(cuid())
-  filename     String
-  contentType  String
-  size         Int
-  url          String
+  attachmentId String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  fileData     Bytes
+  fileName     String
+  fileSize     Int
+  fileType     String
+  postId       Int
+  post         Post     @relation(fields: [postId], references: [postId])
 
   @@map("attachments")
 }
