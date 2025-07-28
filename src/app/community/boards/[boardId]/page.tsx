@@ -14,6 +14,9 @@ import { CommunitySidebar } from '@/features/community/components';
 import { boardAPI } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { getCategoryInfo, boardInfo } from '@/lib/constants/boards';
+import { useAuth } from '@/hooks/useAuth';
+import CommonModal from '@/components/CommonModal';
+import { HiLockClosed } from 'react-icons/hi2';
 
 interface BoardPageProps {
   params: Promise<{ boardId: string }>;
@@ -58,6 +61,7 @@ export default function BoardPage({ params }: BoardPageProps) {
   const { boardId } = use(params);
   const board = boardInfo[boardId];
   const categoryInfo = getCategoryInfo(boardId);
+  const { isLoggedIn, isLoading: authLoading } = useAuth();
 
   // 상태 관리
   const [posts, setPosts] = useState<Post[]>([]);
@@ -68,6 +72,7 @@ export default function BoardPage({ params }: BoardPageProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState('전체');
   const [sortType, setSortType] = useState('최신순');
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const postsPerPage = 20;
 
   // 게시글 데이터 로드
@@ -148,6 +153,18 @@ export default function BoardPage({ params }: BoardPageProps) {
     // useEffect에서 자동으로 처리되므로 별도 로직 불필요
   };
 
+  // 게시글 클릭 핸들러
+  const handlePostClick = (postId: number) => {
+    if (!isLoggedIn && !authLoading) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    if (isLoggedIn) {
+      window.location.href = `/community/boards/${boardId}/posts/${postId}`;
+    }
+  };
+
   // 새로고침 함수
   const handleRefresh = () => {
     window.location.reload();
@@ -183,6 +200,46 @@ export default function BoardPage({ params }: BoardPageProps) {
             </div>
           </div>
         </main>
+
+        {/* 로그인 필요 모달 */}
+        {console.log('🔍 모달 렌더링 체크:', { showLoginModal })}
+        <LoginRequiredModal
+          isOpen={showLoginModal}
+          onClose={() => {
+            console.log('🚪 모달 닫기 버튼 클릭됨');
+            setShowLoginModal(false);
+          }}
+          message='게시글을 확인하려면 로그인이 필요합니다!'
+        />
+
+        {/* 테스트용 강제 모달 */}
+        {showLoginModal && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '50px',
+              right: '50px',
+              background: 'red',
+              color: 'white',
+              padding: '20px',
+              zIndex: 10000,
+              border: '3px solid yellow',
+            }}
+          >
+            테스트 모달 - 이게 보이나요?
+            <button
+              onClick={() => setShowLoginModal(false)}
+              style={{
+                marginLeft: '10px',
+                background: 'black',
+                color: 'white',
+                padding: '5px',
+              }}
+            >
+              닫기
+            </button>
+          </div>
+        )}
       </>
     );
   }
@@ -332,12 +389,16 @@ export default function BoardPage({ params }: BoardPageProps) {
                     {currentPosts.length > 0 ? (
                       <div className='divide-y divide-gray-200'>
                         {currentPosts.map((post, index) => (
-                          <Link
+                          <div
                             key={post.postId}
-                            href={`/community/boards/${boardId}/posts/${post.postId}`}
-                            className='text-gray-900 hover:text-blue-600 transition-colors font-medium'
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handlePostClick(post.postId);
+                            }}
+                            className='text-gray-900 hover:text-blue-600 transition-colors font-medium cursor-pointer hover:bg-gray-50 rounded-lg'
                           >
-                            <div className='grid grid-cols-12 gap-4 p-4 hover:bg-gray-50 transition-colors cursor-pointer'>
+                            <div className='grid grid-cols-12 gap-4 p-4 hover:bg-gray-50 transition-colors'>
                               <div className='col-span-1 text-center text-sm text-gray-600'>
                                 {(currentPage - 1) * postsPerPage + index + 1}
                               </div>
@@ -379,7 +440,7 @@ export default function BoardPage({ params }: BoardPageProps) {
                                 {/* 추천 수 표시 (추후 구현) */}0
                               </div>
                             </div>
-                          </Link>
+                          </div>
                         ))}
                       </div>
                     ) : (
@@ -486,6 +547,18 @@ export default function BoardPage({ params }: BoardPageProps) {
           </div>
         </div>
       </main>
+
+      {/* 로그인 필요 모달 */}
+      <CommonModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        icon={<HiLockClosed className='w-8 h-8' />}
+        title='로그인이 필요합니다'
+        message='게시글을 확인하려면 로그인이 필요합니다!'
+        actionText='로그인 하러가기'
+        actionLink='/signin'
+        variant='info'
+      />
     </>
   );
 }
