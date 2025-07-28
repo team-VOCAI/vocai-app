@@ -18,6 +18,7 @@ import Navbar from '@/components/Navbar';
 import { CommunitySidebar } from '@/features/community/components';
 import { boardAPI, commentAPI, userAPI } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import { getCategoryInfo, boardInfo } from '@/lib/constants/boards';
 
 interface PostDetailPageProps {
   params: Promise<{ boardId: string; postId: string }>;
@@ -58,55 +59,6 @@ interface Comment {
   createdAt: string;
   updatedAt: string;
 }
-
-// 카테고리 정보 매핑
-const getCategoryInfo = (boardId: string) => {
-  if (['1', '2', '3', '4'].includes(boardId)) {
-    return { name: '취업 정보', defaultId: '1' };
-  } else if (['5', '6'].includes(boardId)) {
-    return { name: '자유게시판', defaultId: '5' };
-  } else if (['7', '8'].includes(boardId)) {
-    return { name: '스터디 모집', defaultId: '7' };
-  }
-  return null;
-};
-
-// 게시판 정보 매핑
-const boardInfo: Record<string, { name: string; description: string }> = {
-  '1': {
-    name: '기업별 취업 정보',
-    description:
-      '기업별, 직군별 채용 정보와 다양한 취업 정보를 공유하는 공간입니다.',
-  },
-  '2': {
-    name: '직무별 취업 정보',
-    description: '직무별 채용 정보, 면접 후기, 합격 팁을 공유하는 공간입니다.',
-  },
-  '3': {
-    name: '취업 후기',
-    description: '취업 성공 후기와 면접 경험담을 공유하는 공간입니다.',
-  },
-  '4': {
-    name: '취업 질문',
-    description: '취업 관련 궁금한 점을 질문하고 답변을 받는 공간입니다.',
-  },
-  '5': {
-    name: '자유게시판',
-    description: '자유롭게 소통하고 다양한 주제로 이야기를 나누는 공간입니다.',
-  },
-  '6': {
-    name: '정보공유',
-    description: '유용한 정보와 팁을 공유하는 공간입니다.',
-  },
-  '7': {
-    name: '스터디 모집',
-    description: '함께 공부할 스터디 멤버를 모집하는 공간입니다.',
-  },
-  '8': {
-    name: '프로젝트 모집',
-    description: '프로젝트 팀원을 모집하고 협업하는 공간입니다.',
-  },
-};
 
 // 파일 크기 포맷팅 함수
 const formatFileSize = (bytes: number): string => {
