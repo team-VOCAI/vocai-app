@@ -200,46 +200,6 @@ export default function BoardPage({ params }: BoardPageProps) {
             </div>
           </div>
         </main>
-
-        {/* 로그인 필요 모달 */}
-        {console.log('🔍 모달 렌더링 체크:', { showLoginModal })}
-        <LoginRequiredModal
-          isOpen={showLoginModal}
-          onClose={() => {
-            console.log('🚪 모달 닫기 버튼 클릭됨');
-            setShowLoginModal(false);
-          }}
-          message='게시글을 확인하려면 로그인이 필요합니다!'
-        />
-
-        {/* 테스트용 강제 모달 */}
-        {showLoginModal && (
-          <div
-            style={{
-              position: 'fixed',
-              top: '50px',
-              right: '50px',
-              background: 'red',
-              color: 'white',
-              padding: '20px',
-              zIndex: 10000,
-              border: '3px solid yellow',
-            }}
-          >
-            테스트 모달 - 이게 보이나요?
-            <button
-              onClick={() => setShowLoginModal(false)}
-              style={{
-                marginLeft: '10px',
-                background: 'black',
-                color: 'white',
-                padding: '5px',
-              }}
-            >
-              닫기
-            </button>
-          </div>
-        )}
       </>
     );
   }
