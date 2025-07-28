@@ -162,6 +162,16 @@ export const boardAPI = {
   getStats: async () => {
     return apiClient.get('/boards/stats');
   },
+
+  // 게시글 수정
+  updatePost: async (boardId: string, postId: string, data: PostData) => {
+    return apiClient.put(`/boards/${boardId}/posts/${postId}`, data);
+  },
+
+  // 게시글 삭제
+  deletePost: async (boardId: string, postId: string) => {
+    return apiClient.delete(`/boards/${boardId}/posts/${postId}`);
+  },
 };
 
 // 댓글 관련 API

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   HiArrowLeft,
   HiPencilSquare,
@@ -74,6 +75,7 @@ const formatFileSize = (bytes: number): string => {
 
 export default function PostDetailPage({ params }: PostDetailPageProps) {
   const { boardId, postId } = use(params);
+  const router = useRouter();
   const board = boardInfo[boardId];
   const categoryInfo = getCategoryInfo(boardId);
 
@@ -273,6 +275,27 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
     return (
       currentUser && post && currentUser.profileId === post.profile.profileId
     );
+  };
+
+  // 게시글 수정
+  const handlePostEdit = () => {
+    router.push(`/community/boards/${boardId}/write?postId=${postId}`);
+  };
+
+  // 게시글 삭제
+  const handlePostDelete = async () => {
+    if (!window.confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await boardAPI.deletePost(boardId, postId);
+      alert('게시글이 성공적으로 삭제되었습니다.');
+      router.push(`/community/boards/${boardId}`);
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('게시글 삭제 중 오류가 발생했습니다.');
+    }
   };
 
   if (!board) {
@@ -476,11 +499,17 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
                     {/* 작성자에게만 수정/삭제 버튼 표시 */}
                     {isAuthor() && (
                       <>
-                        <button className='flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium bg-[var(--button-primary-bg)] text-[var(--text-accent)] hover:bg-[var(--button-primary-bg-hover)] transition-colors duration-200'>
+                        <button
+                          onClick={handlePostEdit}
+                          className='flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium bg-[var(--button-primary-bg)] text-[var(--text-accent)] hover:bg-[var(--button-primary-bg-hover)] transition-colors duration-200'
+                        >
                           <HiPencilSquare className='w-4 h-4' />
                           수정
                         </button>
-                        <button className='flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium bg-[var(--button-error-bg)] text-[var(--text-error)] hover:bg-[var(--button-error-bg-hover)] transition-colors duration-200'>
+                        <button
+                          onClick={handlePostDelete}
+                          className='flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium bg-[var(--button-error-bg)] text-[var(--text-error)] hover:bg-[var(--button-error-bg-hover)] transition-colors duration-200'
+                        >
                           <HiTrash className='w-4 h-4' />
                           삭제
                         </button>
