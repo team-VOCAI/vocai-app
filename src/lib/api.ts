@@ -178,8 +178,13 @@ export const commentAPI = {
     return apiClient.post('/comments', { postId, content });
   },
 
+  // 댓글 수정
+  updateComment: async (commentId: number, content: string) => {
+    return apiClient.put(`/comments/${commentId}`, { content });
+  },
+
   // 댓글 삭제
-  deleteComment: async (commentId: string) => {
+  deleteComment: async (commentId: number) => {
     return apiClient.delete(`/comments/${commentId}`);
   },
 };

@@ -4,7 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { authAPI, userAPI, ApiError } from '@/lib/api';
-import { canStayAfterLogout, setCurrentPageAsRedirect } from '@/lib/redirect';
+import {
+  canStayAfterLogout,
+  setCurrentPageAsRedirect,
+  getLogoutRedirectUrl,
+} from '@/lib/redirect';
 
 // 사용자 프로필 타입 정의
 interface UserProfile {
@@ -82,8 +86,9 @@ export default function Navbar() {
         // 페이지 새로고침으로 로그아웃 상태 반영
         window.location.reload();
       } else {
-        console.log('🏠 메인 페이지로 이동');
-        router.push('/');
+        const redirectUrl = getLogoutRedirectUrl(pathname);
+        console.log('🔄 페이지 이동:', pathname, '->', redirectUrl);
+        router.push(redirectUrl);
       }
     }
   };

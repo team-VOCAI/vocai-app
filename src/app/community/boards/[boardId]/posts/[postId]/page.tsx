@@ -13,6 +13,8 @@ import {
   HiArrowDownTray,
   HiChatBubbleLeft,
   HiHandThumbUp,
+  HiXMark,
+  HiCheck,
 } from 'react-icons/hi2';
 import Navbar from '@/components/Navbar';
 import { CommunitySidebar } from '@/features/community/components';
@@ -40,7 +42,7 @@ interface PostDetail {
   jobCategory?: string;
   tags?: string;
   profile: {
-    userId: number;
+    profileId: number;
   };
   attachments?: Array<{
     attachmentId: string;
@@ -51,13 +53,14 @@ interface PostDetail {
   }>;
 }
 
-// 댓글 타입 정의
+// 댓글 타입 정의 (profileId 추가)
 interface Comment {
   commentId: number;
   content: string;
   nickName: string;
   createdAt: string;
   updatedAt: string;
+  profileId: number;
 }
 
 // 파일 크기 포맷팅 함수
@@ -79,16 +82,20 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ userId?: number } | null>(
+  const [currentUser, setCurrentUser] = useState<{ profileId?: number } | null>(
     null
   );
+
+  // 댓글 수정 관련 상태
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingContent, setEditingContent] = useState('');
 
   // 현재 사용자 정보 가져오기
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
         const response = await userAPI.getProfile();
-        const userData = response.data as { userId?: number };
+        const userData = response.data as { profileId?: number };
         setCurrentUser(userData);
       } catch (error) {
         // 로그인하지 않은 경우 무시
@@ -113,14 +120,15 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         const postResponse = await boardAPI.getPost(boardId, postId);
-        const postData = postResponse.data as PostDetail;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const postData = postResponse.data as any;
 
         // 임시로 추천 데이터 추가 (실제로는 서버에서 가져와야 함)
         setPost({
           ...postData,
           likeCount: 12, // 임시 추천 수
           isLiked: false, // 임시 추천 상태
-        });
+        } as PostDetail);
 
         // 댓글 목록 가져오기
         const commentsResponse = await commentAPI.getComments(parseInt(postId));
@@ -159,6 +167,67 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
       alert('댓글 작성 중 오류가 발생했습니다.');
     } finally {
       setIsSubmittingComment(false);
+    }
+  };
+
+  // 댓글 수정
+  const handleCommentEdit = async (commentId: number) => {
+    const commentToEdit = comments.find(
+      (comment) => comment.commentId === commentId
+    );
+    if (!commentToEdit) return;
+
+    setEditingCommentId(commentId);
+    setEditingContent(commentToEdit.content);
+  };
+
+  // 댓글 수정 취소
+  const handleCommentEditCancel = () => {
+    setEditingCommentId(null);
+    setEditingContent('');
+  };
+
+  // 댓글 수정 제출
+  const handleCommentEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingContent.trim()) return;
+
+    try {
+      await commentAPI.updateComment(editingCommentId!, editingContent);
+      setComments(
+        comments.map((comment) =>
+          comment.commentId === editingCommentId
+            ? { ...comment, content: editingContent }
+            : comment
+        )
+      );
+      setEditingCommentId(null);
+      setEditingContent('');
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      alert('댓글 수정 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 댓글 삭제
+  const handleCommentDelete = async (commentId: number) => {
+    if (!window.confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await commentAPI.deleteComment(commentId);
+      setComments(
+        comments.filter((comment) => comment.commentId !== commentId)
+      );
+
+      // 댓글 수 업데이트
+      if (post) {
+        setPost({ ...post, commentCount: post.commentCount - 1 });
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      alert('댓글 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -201,7 +270,9 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
 
   // 작성자인지 확인하는 함수
   const isAuthor = () => {
-    return currentUser && post && currentUser.userId === post.profile.userId;
+    return (
+      currentUser && post && currentUser.profileId === post.profile.profileId
+    );
   };
 
   if (!board) {
@@ -527,17 +598,87 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
                         key={comment.commentId}
                         className='border-b border-gray-100 pb-4 last:border-b-0'
                       >
-                        <div className='flex items-center gap-2 mb-2'>
-                          <span className='font-medium text-gray-900'>
-                            {comment.nickName}
-                          </span>
-                          <span className='text-sm text-gray-500'>
-                            {formatDate(comment.createdAt)}
-                          </span>
+                        <div className='flex items-center justify-between mb-2'>
+                          <div className='flex items-center gap-2'>
+                            <span className='font-medium text-gray-900'>
+                              {comment.nickName}
+                            </span>
+                            <span className='text-sm text-gray-500'>
+                              {formatDate(comment.createdAt)}
+                            </span>
+                          </div>
+                          {currentUser &&
+                            currentUser.profileId === comment.profileId && (
+                              <div className='flex items-center gap-2'>
+                                <button
+                                  onClick={() =>
+                                    handleCommentEdit(comment.commentId)
+                                  }
+                                  className='flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-all duration-200 shadow-sm'
+                                  title='댓글 수정'
+                                >
+                                  <HiPencilSquare className='w-3.5 h-3.5' />
+                                  <span>수정</span>
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleCommentDelete(comment.commentId)
+                                  }
+                                  className='flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 hover:text-red-700 transition-all duration-200 shadow-sm'
+                                  title='댓글 삭제'
+                                >
+                                  <HiTrash className='w-3.5 h-3.5' />
+                                  <span>삭제</span>
+                                </button>
+                              </div>
+                            )}
                         </div>
-                        <p className='text-gray-700 leading-relaxed'>
-                          {comment.content}
-                        </p>
+                        {editingCommentId === comment.commentId ? (
+                          <div className='bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3'>
+                            <form
+                              onSubmit={handleCommentEditSubmit}
+                              className='space-y-3'
+                            >
+                              <div>
+                                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                                  댓글 수정
+                                </label>
+                                <textarea
+                                  value={editingContent}
+                                  onChange={(e) =>
+                                    setEditingContent(e.target.value)
+                                  }
+                                  className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-colors duration-200 bg-white'
+                                  rows={3}
+                                  placeholder='댓글을 수정하세요...'
+                                  autoFocus
+                                />
+                              </div>
+                              <div className='flex items-center justify-end gap-2'>
+                                <button
+                                  type='button'
+                                  onClick={handleCommentEditCancel}
+                                  className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-all duration-200'
+                                >
+                                  <HiXMark className='w-4 h-4' />
+                                  <span>취소</span>
+                                </button>
+                                <button
+                                  type='submit'
+                                  disabled={!editingContent.trim()}
+                                  className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 shadow-sm'
+                                >
+                                  <HiCheck className='w-4 h-4' />
+                                  <span>수정 완료</span>
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        ) : (
+                          <p className='text-gray-700 leading-relaxed'>
+                            {comment.content}
+                          </p>
+                        )}
                       </div>
                     ))
                   )}

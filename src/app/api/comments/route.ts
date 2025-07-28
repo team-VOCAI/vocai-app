@@ -1,20 +1,24 @@
 // src/app/api/comments/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getProfileFromRequest } from '@/lib/getProfile';
 
 export async function GET(req: NextRequest) {
-  const postId = Number(req.nextUrl.searchParams.get("postId"));
+  const postId = Number(req.nextUrl.searchParams.get('postId'));
 
   if (isNaN(postId)) {
     return NextResponse.json(
-      { message: "postId가 필요합니다." },
+      { message: 'postId가 필요합니다.' },
       { status: 400 }
     );
   }
 
   const comments = await prisma.comment.findMany({
-    where: { postId },
-    orderBy: { createdAt: "asc" },
+    where: {
+      postId,
+      deletedAt: null, // 삭제되지 않은 댓글만 조회
+    },
+    orderBy: { createdAt: 'asc' },
     include: { profile: true },
   });
 
@@ -24,10 +28,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { postId, content } = await req.json();
 
-  const profile = await prisma.profile.findFirst(); // 테스트용 임시 사용자
+  // 실제 로그인한 사용자 확인
+  const profile = await getProfileFromRequest(req);
 
   if (!profile) {
-    return NextResponse.json({ message: "사용자 없음" }, { status: 400 });
+    return NextResponse.json({ error: '인증 실패' }, { status: 401 });
   }
 
   const comment = await prisma.comment.create({
