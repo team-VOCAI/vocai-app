@@ -10,6 +10,7 @@ import Navbar from '@/components/Navbar';
 import ContainerX from '@/components/ContainerX';
 import { signinSchema, type SigninFormData } from '@/lib/schemas/auth';
 import { authAPI, ApiError } from '@/lib/api';
+import { redirectAfterLogin } from '@/lib/redirect';
 
 export default function SignInPage() {
   const handleGoogleSignIn = () => {
@@ -47,8 +48,9 @@ export default function SignInPage() {
       // 성공 알림
       alert('로그인이 완료되었습니다!');
 
-      // 메인 페이지로 리다이렉트
-      router.push('/');
+      // 저장된 리다이렉트 URL로 이동 (없으면 메인으로)
+      const redirectUrl = redirectAfterLogin();
+      router.push(redirectUrl);
     } catch (error) {
       console.error('로그인 중 오류:', error);
 

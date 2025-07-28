@@ -17,6 +17,7 @@ import { getCategoryInfo, boardInfo } from '@/lib/constants/boards';
 import { useAuth } from '@/hooks/useAuth';
 import CommonModal from '@/components/CommonModal';
 import { HiLockClosed } from 'react-icons/hi2';
+import { setCurrentPageAsRedirect } from '@/lib/redirect';
 
 interface BoardPageProps {
   params: Promise<{ boardId: string }>;
@@ -156,12 +157,30 @@ export default function BoardPage({ params }: BoardPageProps) {
   // 게시글 클릭 핸들러
   const handlePostClick = (postId: number) => {
     if (!isLoggedIn && !authLoading) {
+      // 현재 페이지를 리다이렉트 URL로 저장
+      setCurrentPageAsRedirect();
       setShowLoginModal(true);
       return;
     }
 
     if (isLoggedIn) {
       window.location.href = `/community/boards/${boardId}/posts/${postId}`;
+    }
+  };
+
+  // 글쓰기 버튼 클릭 핸들러 (게시글 없을 때 표시되는 버튼)
+  const handleWriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (!isLoggedIn && !authLoading) {
+      // 현재 페이지를 리다이렉트 URL로 저장
+      setCurrentPageAsRedirect();
+      setShowLoginModal(true);
+      return;
+    }
+
+    if (isLoggedIn) {
+      window.location.href = `/community/boards/${boardId}/write`;
     }
   };
 
@@ -248,13 +267,15 @@ export default function BoardPage({ params }: BoardPageProps) {
                     <p className='text-gray-600'>{board.description}</p>
                   </div>
                   <div className='sm:flex-shrink-0'>
-                    <Link
-                      href={`/community/boards/${boardId}/write`}
-                      className='inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors duration-200'
-                    >
-                      <HiPlus className='w-4 h-4' />
-                      글쓰기
-                    </Link>
+                    {isLoggedIn && (
+                      <Link
+                        href={`/community/boards/${boardId}/write`}
+                        className='inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors duration-200'
+                      >
+                        <HiPlus className='w-4 h-4' />
+                        글쓰기
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
@@ -437,13 +458,14 @@ export default function BoardPage({ params }: BoardPageProps) {
                             </p>
                           </>
                         )}
-                        <Link
-                          href={`/community/boards/${boardId}/write`}
+
+                        <button
+                          onClick={handleWriteClick}
                           className='inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors'
                         >
                           <HiPlus className='w-4 h-4' />
                           글쓰기
-                        </Link>
+                        </button>
                       </div>
                     )}
                   </>
