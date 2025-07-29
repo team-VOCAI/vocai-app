@@ -4,6 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { authAPI, userAPI, ApiError } from '@/lib/api';
+import {
+  canStayAfterLogout,
+  setCurrentPageAsRedirect,
+  getLogoutRedirectUrl,
+} from '@/lib/redirect';
 
 // 사용자 프로필 타입 정의
 interface UserProfile {
@@ -75,9 +80,23 @@ export default function Navbar() {
       setUserInfo(null);
       console.log('🔄 클라이언트 상태 초기화 완료');
 
-      // 메인 페이지로 이동
-      router.push('/');
+      // 현재 페이지에 머물 수 있는지 확인
+      if (canStayAfterLogout(pathname)) {
+        console.log('📍 현재 페이지에 머무름:', pathname);
+        // 페이지 새로고침으로 로그아웃 상태 반영
+        window.location.reload();
+      } else {
+        const redirectUrl = getLogoutRedirectUrl(pathname);
+        console.log('🔄 페이지 이동:', pathname, '->', redirectUrl);
+        router.push(redirectUrl);
+      }
     }
+  };
+
+  // 로그인 페이지로 이동 (현재 페이지 저장)
+  const handleLoginClick = () => {
+    setCurrentPageAsRedirect();
+    router.push('/signin');
   };
 
   return (
@@ -144,12 +163,12 @@ export default function Navbar() {
             </div>
           ) : (
             // 로그인되지 않은 상태 또는 로딩 중 - 로그인/회원가입 버튼
-            <Link
-              href='/signin'
+            <button
+              onClick={handleLoginClick}
               className='text-base font-semibold text-[var(--text-accent)] px-4 py-2 rounded-lg border border-[var(--primary)] bg-white hover:bg-[var(--primary)] hover:text-[var(--text-inverse)] transition-colors focus:outline-none'
             >
               로그인/회원가입
-            </Link>
+            </button>
           )}
         </div>
       </div>

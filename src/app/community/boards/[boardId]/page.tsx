@@ -13,6 +13,11 @@ import Navbar from '@/components/Navbar';
 import { CommunitySidebar } from '@/features/community/components';
 import { boardAPI } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import { getCategoryInfo, boardInfo } from '@/lib/constants/boards';
+import { useAuth } from '@/hooks/useAuth';
+import CommonModal from '@/components/CommonModal';
+import { HiLockClosed } from 'react-icons/hi2';
+import { setCurrentPageAsRedirect } from '@/lib/redirect';
 
 interface BoardPageProps {
   params: Promise<{ boardId: string }>;
@@ -53,59 +58,11 @@ interface PostsResponse {
   posts: Post[];
 }
 
-// 카테고리 정보 매핑
-const getCategoryInfo = (boardId: string) => {
-  if (['1', '2', '3', '4'].includes(boardId)) {
-    return { name: '취업 정보', defaultId: '1' };
-  } else if (['5', '6'].includes(boardId)) {
-    return { name: '자유게시판', defaultId: '5' };
-  } else if (['7', '8'].includes(boardId)) {
-    return { name: '스터디 모집', defaultId: '7' };
-  }
-  return null;
-};
-
-// 게시판 정보 매핑
-const boardInfo: Record<string, { name: string; description: string }> = {
-  '1': {
-    name: '기업별 취업 정보',
-    description:
-      '기업별, 직군별 채용 정보와 다양한 취업 정보를 공유하는 공간입니다.',
-  },
-  '2': {
-    name: '면접 후기',
-    description: '실제 면접 경험담과 후기를 공유하는 공간입니다.',
-  },
-  '3': {
-    name: '취업 질문',
-    description: '취업 관련 궁금한 점을 묻고 답변하는 공간입니다.',
-  },
-  '4': {
-    name: '취업 자료 공유',
-    description: '이력서, 자소서 등 취업 자료를 공유하는 공간입니다.',
-  },
-  '5': {
-    name: '잡담방',
-    description: '자유롭게 이야기하는 공간입니다.',
-  },
-  '6': {
-    name: '고민상담',
-    description: '진로와 고민을 나누는 공간입니다.',
-  },
-  '7': {
-    name: '스터디 목록',
-    description: '스터디 그룹 모집 및 참여하는 공간입니다.',
-  },
-  '8': {
-    name: '스터디 후기',
-    description: '스터디 경험담과 후기를 공유하는 공간입니다.',
-  },
-};
-
 export default function BoardPage({ params }: BoardPageProps) {
   const { boardId } = use(params);
   const board = boardInfo[boardId];
   const categoryInfo = getCategoryInfo(boardId);
+  const { isLoggedIn, isLoading: authLoading } = useAuth();
 
   // 상태 관리
   const [posts, setPosts] = useState<Post[]>([]);
@@ -116,6 +73,7 @@ export default function BoardPage({ params }: BoardPageProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState('전체');
   const [sortType, setSortType] = useState('최신순');
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const postsPerPage = 20;
 
   // 게시글 데이터 로드
@@ -194,6 +152,36 @@ export default function BoardPage({ params }: BoardPageProps) {
   // 검색 함수
   const handleSearch = () => {
     // useEffect에서 자동으로 처리되므로 별도 로직 불필요
+  };
+
+  // 게시글 클릭 핸들러
+  const handlePostClick = (postId: number) => {
+    if (!isLoggedIn && !authLoading) {
+      // 현재 페이지를 리다이렉트 URL로 저장
+      setCurrentPageAsRedirect();
+      setShowLoginModal(true);
+      return;
+    }
+
+    if (isLoggedIn) {
+      window.location.href = `/community/boards/${boardId}/posts/${postId}`;
+    }
+  };
+
+  // 글쓰기 버튼 클릭 핸들러 (게시글 없을 때 표시되는 버튼)
+  const handleWriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (!isLoggedIn && !authLoading) {
+      // 현재 페이지를 리다이렉트 URL로 저장
+      setCurrentPageAsRedirect();
+      setShowLoginModal(true);
+      return;
+    }
+
+    if (isLoggedIn) {
+      window.location.href = `/community/boards/${boardId}/write`;
+    }
   };
 
   // 새로고침 함수
@@ -279,13 +267,15 @@ export default function BoardPage({ params }: BoardPageProps) {
                     <p className='text-gray-600'>{board.description}</p>
                   </div>
                   <div className='sm:flex-shrink-0'>
-                    <Link
-                      href={`/community/boards/${boardId}/write`}
-                      className='inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors duration-200'
-                    >
-                      <HiPlus className='w-4 h-4' />
-                      글쓰기
-                    </Link>
+                    {isLoggedIn && (
+                      <Link
+                        href={`/community/boards/${boardId}/write`}
+                        className='inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors duration-200'
+                      >
+                        <HiPlus className='w-4 h-4' />
+                        글쓰기
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
@@ -382,51 +372,54 @@ export default function BoardPage({ params }: BoardPageProps) {
                         {currentPosts.map((post, index) => (
                           <div
                             key={post.postId}
-                            className='grid grid-cols-12 gap-4 p-4 hover:bg-gray-50 transition-colors cursor-pointer'
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handlePostClick(post.postId);
+                            }}
+                            className='text-gray-900 hover:text-blue-600 transition-colors font-medium cursor-pointer hover:bg-gray-50 rounded-lg'
                           >
-                            <div className='col-span-1 text-center text-sm text-gray-600'>
-                              {(currentPage - 1) * postsPerPage + index + 1}
-                            </div>
-                            <div className='col-span-5'>
-                              <div className='flex items-center gap-2'>
-                                {/* 취업 정보 카테고리인 경우 메타정보 표시 */}
-                                {['1', '2', '3', '4'].includes(boardId) &&
-                                  (post.company || post.jobCategory) && (
-                                    <span className='text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded'>
-                                      {post.company && post.jobCategory
-                                        ? `${post.company} · ${post.jobCategory}`
-                                        : post.company || post.jobCategory}
+                            <div className='grid grid-cols-12 gap-4 p-4 hover:bg-gray-50 transition-colors'>
+                              <div className='col-span-1 text-center text-sm text-gray-600'>
+                                {(currentPage - 1) * postsPerPage + index + 1}
+                              </div>
+                              <div className='col-span-5'>
+                                <div className='flex items-center gap-2'>
+                                  {/* 취업 정보 카테고리인 경우 메타정보 표시 */}
+                                  {['1', '2', '3', '4'].includes(boardId) &&
+                                    (post.company || post.jobCategory) && (
+                                      <span className='text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded'>
+                                        {post.company && post.jobCategory
+                                          ? `${post.company} · ${post.jobCategory}`
+                                          : post.company || post.jobCategory}
+                                      </span>
+                                    )}
+                                  {post.title}
+
+                                  {/* 첨부파일 아이콘 표시 */}
+                                  {post.attachments.length > 0 && (
+                                    <HiPaperClip className='w-4 h-4 text-gray-500' />
+                                  )}
+                                  {/* 댓글 수 표시 [댓글수] 형식 */}
+                                  {post.commentCount > 0 && (
+                                    <span className='text-gray-500 text-sm'>
+                                      [{post.commentCount}]
                                     </span>
                                   )}
-                                <Link
-                                  href={`/community/boards/${boardId}/posts/${post.postId}`}
-                                  className='text-gray-900 hover:text-blue-600 transition-colors font-medium'
-                                >
-                                  {post.title}
-                                </Link>
-                                {/* 첨부파일 아이콘 표시 */}
-                                {post.attachments.length > 0 && (
-                                  <HiPaperClip className='w-4 h-4 text-gray-500' />
-                                )}
-                                {/* 댓글 수 표시 [댓글수] 형식 */}
-                                {post.commentCount > 0 && (
-                                  <span className='text-gray-500 text-sm'>
-                                    [{post.commentCount}]
-                                  </span>
-                                )}
+                                </div>
                               </div>
-                            </div>
-                            <div className='col-span-2 text-center text-sm text-gray-600'>
-                              {post.nickName}
-                            </div>
-                            <div className='col-span-2 text-center text-sm text-gray-600'>
-                              {formatDate(post.createdAt)}
-                            </div>
-                            <div className='col-span-1 text-center text-sm text-gray-600'>
-                              {post.view}
-                            </div>
-                            <div className='col-span-1 text-center text-sm text-gray-600'>
-                              {/* 추천 수 표시 (추후 구현) */}0
+                              <div className='col-span-2 text-center text-sm text-gray-600'>
+                                {post.nickName}
+                              </div>
+                              <div className='col-span-2 text-center text-sm text-gray-600'>
+                                {formatDate(post.createdAt)}
+                              </div>
+                              <div className='col-span-1 text-center text-sm text-gray-600'>
+                                {post.view}
+                              </div>
+                              <div className='col-span-1 text-center text-sm text-gray-600'>
+                                {/* 추천 수 표시 (추후 구현) */}0
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -465,13 +458,14 @@ export default function BoardPage({ params }: BoardPageProps) {
                             </p>
                           </>
                         )}
-                        <Link
-                          href={`/community/boards/${boardId}/write`}
+
+                        <button
+                          onClick={handleWriteClick}
                           className='inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors'
                         >
                           <HiPlus className='w-4 h-4' />
                           글쓰기
-                        </Link>
+                        </button>
                       </div>
                     )}
                   </>
@@ -535,6 +529,18 @@ export default function BoardPage({ params }: BoardPageProps) {
           </div>
         </div>
       </main>
+
+      {/* 로그인 필요 모달 */}
+      <CommonModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        icon={<HiLockClosed className='w-8 h-8' />}
+        title='로그인이 필요합니다'
+        message='게시글을 확인하려면 로그인이 필요합니다!'
+        actionText='로그인 하러가기'
+        actionLink='/signin'
+        variant='info'
+      />
     </>
   );
 }

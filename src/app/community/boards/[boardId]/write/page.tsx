@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, use, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { CommunitySidebar } from '@/features/community/components';
 import Link from 'next/link';
 import { HiArrowLeft, HiPlus, HiXMark } from 'react-icons/hi2';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -14,6 +14,12 @@ import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import { boardAPI } from '@/lib/api';
+import {
+  getCategoryInfo,
+  boardInfo,
+  jobCategories,
+  companies,
+} from '@/lib/constants/boards';
 import {
   formatFileSize,
   getFileIcon,
@@ -28,116 +34,12 @@ interface WritePageProps {
   }>;
 }
 
-// 카테고리 정보 매핑
-const getCategoryInfo = (boardId: string) => {
-  if (['1', '2', '3', '4'].includes(boardId)) {
-    return { name: '취업 정보', defaultId: '1' };
-  } else if (['5', '6'].includes(boardId)) {
-    return { name: '자유게시판', defaultId: '5' };
-  } else if (['7', '8'].includes(boardId)) {
-    return { name: '스터디 모집', defaultId: '7' };
-  }
-  return null;
-};
-
-// 게시판 정보 매핑
-const boardInfo: Record<string, { name: string; description: string }> = {
-  '1': {
-    name: '기업별 취업 정보',
-    description:
-      '기업별, 직군별 채용 정보와 다양한 취업 정보를 공유하는 공간입니다.',
-  },
-  '2': {
-    name: '면접 후기',
-    description: '실제 면접 경험담과 후기를 공유하는 공간입니다.',
-  },
-  '3': {
-    name: '취업 질문',
-    description: '취업 관련 궁금한 점을 묻고 답변하는 공간입니다.',
-  },
-  '4': {
-    name: '취업 자료 공유',
-    description: '이력서, 자소서 등 취업 자료를 공유하는 공간입니다.',
-  },
-  '5': {
-    name: '잡담방',
-    description: '자유롭게 이야기하는 공간입니다.',
-  },
-  '6': {
-    name: '고민상담',
-    description: '진로와 고민을 나누는 공간입니다.',
-  },
-  '7': {
-    name: '스터디 목록',
-    description: '스터디 그룹 모집 및 참여하는 공간입니다.',
-  },
-  '8': {
-    name: '스터디 후기',
-    description: '스터디 경험담과 후기를 공유하는 공간입니다.',
-  },
-};
-
-// 직무 카테고리 옵션
-const jobCategories = [
-  { value: 'FE', label: '프론트엔드' },
-  { value: 'BE', label: '백엔드' },
-  { value: 'FS', label: '풀스택' },
-  { value: 'iOS', label: 'iOS' },
-  { value: 'AOS', label: '안드로이드' },
-  { value: 'DevOps', label: 'DevOps' },
-  { value: 'DATA', label: '데이터분석' },
-  { value: 'AI', label: 'AI/ML' },
-  { value: 'GAME', label: '게임개발' },
-  { value: 'UX', label: 'UX/UI' },
-  { value: 'PM', label: '기획' },
-  { value: 'QA', label: 'QA' },
-  { value: 'SECURITY', label: '보안' },
-  { value: 'CLOUD', label: '클라우드' },
-  { value: 'BLOCKCHAIN', label: '블록체인' },
-  { value: '기타', label: '기타' },
-];
-
-// 대표 기업 목록
-const companies = [
-  '네이버',
-  '카카오',
-  '삼성',
-  'LG',
-  '라인',
-  '토스',
-  '쿠팡',
-  '배민',
-  '야놀자',
-  '당근마켓',
-  'SKT',
-  'KT',
-  '현대차',
-  'NHN',
-  '넥슨',
-  'NC소프트',
-  '스마일게이트',
-  '컴투스',
-  '우아한형제들',
-  '버즈빌',
-  '마켓컬리',
-  '뱅크샐러드',
-  '하이퍼커넥트',
-  '리디',
-  '직방',
-  '구글',
-  '마이크로소프트',
-  '아마존',
-  '메타',
-  '애플',
-  '테슬라',
-  '넷플릭스',
-  '에어비앤비',
-  '기타',
-];
-
 export default function WritePage({ params }: WritePageProps) {
   const { boardId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const postId = searchParams.get('postId'); // URL에서 postId 파라미터 읽기
+  const isEditMode = !!postId; // postId가 있으면 수정 모드
   const board = boardInfo[boardId];
   const categoryInfo = getCategoryInfo(boardId);
 
@@ -157,6 +59,21 @@ export default function WritePage({ params }: WritePageProps) {
   });
   const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 기존 첨부파일 관리 (수정 모드용)
+  const [existingAttachments, setExistingAttachments] = useState<
+    Array<{
+      attachmentId: string;
+      fileName: string;
+      fileSize: number;
+      fileType: string;
+      createdAt: string;
+    }>
+  >([]);
+  const [deletedAttachmentIndexes, setDeletedAttachmentIndexes] = useState<
+    number[]
+  >([]);
 
   // 기타 옵션 선택 시 사용자 입력 필드
   const [customCompany, setCustomCompany] = useState('');
@@ -197,6 +114,79 @@ export default function WritePage({ params }: WritePageProps) {
       }));
     },
   });
+
+  // 수정 모드에서 기존 게시글 데이터 로드
+  useEffect(() => {
+    if (isEditMode && postId) {
+      const loadPostData = async () => {
+        try {
+          setIsLoading(true);
+          const response = await boardAPI.getPost(boardId, postId);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const postData = response.data as any;
+
+          // jobCategory label을 value로 변환
+          const jobCategoryMatch = postData.jobCategory
+            ? jobCategories.find((cat) => cat.label === postData.jobCategory)
+            : null;
+          const jobCategoryValue = jobCategoryMatch?.value || '';
+
+          // jobCategory가 기타인 경우 또는 매칭되지 않는 경우 처리
+          const isCustomJobCategory = postData.jobCategory && !jobCategoryMatch;
+          const finalJobCategoryValue = isCustomJobCategory
+            ? '기타'
+            : jobCategoryValue;
+
+          // company 처리 (기타인 경우 customCompany 설정)
+          const isCustomCompany =
+            postData.company && !companies.includes(postData.company);
+          const companyValue = isCustomCompany
+            ? '기타'
+            : postData.company || '';
+
+          // 폼 데이터 설정
+          setFormData((prev) => ({
+            ...prev,
+            title: postData.title,
+            content: postData.content,
+            company: companyValue,
+            jobCategory: finalJobCategoryValue,
+            tags: postData.tags
+              ? postData.tags.split(',').filter((tag: string) => tag.trim())
+              : [],
+          }));
+
+          // 기타 회사인 경우 customCompany 설정
+          if (isCustomCompany) {
+            setCustomCompany(postData.company);
+          }
+
+          // 기타 직무인 경우 customJobCategory 설정
+          if (isCustomJobCategory) {
+            setCustomJobCategory(postData.jobCategory);
+          }
+
+          // 기존 첨부파일 설정
+          if (postData.attachments && postData.attachments.length > 0) {
+            setExistingAttachments(postData.attachments);
+          }
+
+          // 에디터 내용 설정
+          if (editor) {
+            editor.commands.setContent(postData.content);
+          }
+        } catch (error) {
+          console.error('Error loading post data:', error);
+          alert('게시글 데이터를 불러오는 중 오류가 발생했습니다.');
+          router.back();
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      loadPostData();
+    }
+  }, [isEditMode, postId, boardId, editor, router]);
 
   // 이미지 추가 함수
   const addImage = () => {
@@ -303,14 +293,6 @@ export default function WritePage({ params }: WritePageProps) {
     input.click();
   };
 
-  // 파일 삭제 함수
-  const removeAttachment = (fileName: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      attachments: prev.attachments.filter((att) => att.name !== fileName),
-    }));
-  };
-
   // 태그 추가
   const addTag = () => {
     if (currentTag.trim() && !formData.tags.includes(currentTag.trim())) {
@@ -328,6 +310,19 @@ export default function WritePage({ params }: WritePageProps) {
       ...prev,
       tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }));
+  };
+
+  // 새로 추가한 첨부파일 삭제
+  const removeNewAttachment = (fileName: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      attachments: prev.attachments.filter((att) => att.name !== fileName),
+    }));
+  };
+
+  // 기존 첨부파일 삭제 (수정 모드용)
+  const removeExistingAttachment = (index: number) => {
+    setDeletedAttachmentIndexes((prev) => [...prev, index]);
   };
 
   // 폼 제출
@@ -376,6 +371,7 @@ export default function WritePage({ params }: WritePageProps) {
           type: string;
           data: string;
         }>;
+        deleteAttachmentIndexes?: number[];
         company?: string | null;
         jobCategory?: string | null;
         tags?: string[] | null;
@@ -384,6 +380,11 @@ export default function WritePage({ params }: WritePageProps) {
         content: formData.content, // 순수 내용만
         attachments: formData.attachments,
       };
+
+      // 수정 모드에서 삭제할 첨부파일 인덱스 추가
+      if (isEditMode && deletedAttachmentIndexes.length > 0) {
+        requestData.deleteAttachmentIndexes = deletedAttachmentIndexes;
+      }
 
       // 취업 정보 게시판인 경우 메타정보 추가
       if (['1', '2', '3', '4'].includes(boardId)) {
@@ -394,18 +395,28 @@ export default function WritePage({ params }: WritePageProps) {
 
       console.log('🚀 전송할 데이터:', requestData);
 
-      const response = await boardAPI.createPost(boardId, requestData);
-
-      // axios 인스턴스가 이미 에러 처리하므로 여기 도달하면 성공
-      alert('게시글이 성공적으로 작성되었습니다.');
+      let response;
+      if (isEditMode && postId) {
+        // 수정 모드
+        response = await boardAPI.updatePost(boardId, postId, requestData);
+        alert('게시글이 성공적으로 수정되었습니다.');
+        router.push(`/community/boards/${boardId}/posts/${postId}`);
+      } else {
+        // 새 글 작성 모드
+        response = await boardAPI.createPost(boardId, requestData);
+        alert('게시글이 성공적으로 작성되었습니다.');
+        router.push(`/community/boards/${boardId}`);
+      }
 
       // 테스트용 콘솔 로깅
       console.log(response);
-
-      router.push(`/community/boards/${boardId}`);
     } catch (error) {
-      console.error('Error creating post:', error);
-      alert('게시글 작성 중 오류가 발생했습니다.');
+      console.error('Error saving post:', error);
+      alert(
+        isEditMode
+          ? '게시글 수정 중 오류가 발생했습니다.'
+          : '게시글 작성 중 오류가 발생했습니다.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -477,7 +488,9 @@ export default function WritePage({ params }: WritePageProps) {
                   {board.name}
                 </Link>
                 <span className='mx-2 text-gray-400'>/</span>
-                <span className='text-gray-800 font-medium'>글쓰기</span>
+                <span className='text-gray-800 font-medium'>
+                  {isEditMode ? '게시글 수정' : '글쓰기'}
+                </span>
               </nav>
 
               {/* 페이지 헤더 */}
@@ -485,7 +498,7 @@ export default function WritePage({ params }: WritePageProps) {
                 <div className='flex items-center justify-between'>
                   <div>
                     <h1 className='text-2xl font-bold text-gray-900 mb-2'>
-                      {board.name} 글쓰기
+                      {board.name} {isEditMode ? '게시글 수정' : '글쓰기'}
                     </h1>
                     <p className='text-gray-600'>{board.description}</p>
                   </div>
@@ -498,6 +511,20 @@ export default function WritePage({ params }: WritePageProps) {
                   </Link>
                 </div>
               </div>
+
+              {/* 로딩 상태 */}
+              {isLoading && (
+                <div className='mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6'>
+                  <div className='flex items-center justify-center py-8'>
+                    <div className='text-center'>
+                      <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4'></div>
+                      <p className='text-gray-600'>
+                        게시글 데이터를 불러오는 중...
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 글쓰기 폼 */}
               <form onSubmit={handleSubmit} className='space-y-6'>
@@ -859,11 +886,51 @@ export default function WritePage({ params }: WritePageProps) {
                       </button>
 
                       {/* 첨부 파일 목록 */}
-                      {formData.attachments.length > 0 && (
+                      {(existingAttachments.length > 0 ||
+                        formData.attachments.length > 0) && (
                         <div className='space-y-2'>
+                          {/* 기존 첨부파일 */}
+                          {existingAttachments.map(
+                            (file, index) =>
+                              !deletedAttachmentIndexes.includes(index) && (
+                                <div
+                                  key={`existing-${file.attachmentId}`}
+                                  className='flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200'
+                                >
+                                  <div className='flex items-center gap-3'>
+                                    <span className='text-xl'>
+                                      {getFileIcon(file.fileType)}
+                                    </span>
+                                    <div>
+                                      <p className='text-sm font-medium text-gray-900'>
+                                        {file.fileName}
+                                        <span className='ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded'>
+                                          기존 파일
+                                        </span>
+                                      </p>
+                                      <p className='text-xs text-gray-500'>
+                                        {formatFileSize(file.fileSize)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type='button'
+                                    onClick={() =>
+                                      removeExistingAttachment(index)
+                                    }
+                                    className='text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded transition-colors duration-200'
+                                    title='파일 삭제'
+                                  >
+                                    <HiXMark className='w-4 h-4' />
+                                  </button>
+                                </div>
+                              )
+                          )}
+
+                          {/* 새로 추가한 첨부파일 */}
                           {formData.attachments.map((file, index) => (
                             <div
-                              key={index}
+                              key={`new-${index}`}
                               className='flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200'
                             >
                               <div className='flex items-center gap-3'>
@@ -873,6 +940,9 @@ export default function WritePage({ params }: WritePageProps) {
                                 <div>
                                   <p className='text-sm font-medium text-gray-900'>
                                     {file.name}
+                                    <span className='ml-2 text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded'>
+                                      새 파일
+                                    </span>
                                   </p>
                                   <p className='text-xs text-gray-500'>
                                     {formatFileSize(file.size)}
@@ -881,7 +951,7 @@ export default function WritePage({ params }: WritePageProps) {
                               </div>
                               <button
                                 type='button'
-                                onClick={() => removeAttachment(file.name)}
+                                onClick={() => removeNewAttachment(file.name)}
                                 className='text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded transition-colors duration-200'
                                 title='파일 삭제'
                               >
@@ -912,10 +982,16 @@ export default function WritePage({ params }: WritePageProps) {
                         </Link>
                         <button
                           type='submit'
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isLoading}
                           className='px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors duration-200'
                         >
-                          {isSubmitting ? '작성 중...' : '글 작성'}
+                          {isSubmitting
+                            ? isEditMode
+                              ? '수정 중...'
+                              : '작성 중...'
+                            : isEditMode
+                            ? '게시글 수정'
+                            : '글 작성'}
                         </button>
                       </div>
                     </div>

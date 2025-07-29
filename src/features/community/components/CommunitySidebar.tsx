@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatCount } from '@/lib/utils';
 import { boardAPI } from '@/lib/api';
+import { boardInfo, categoryGroups } from '@/lib/constants/boards';
 
 interface Board {
   id: string;
@@ -27,10 +28,6 @@ interface BoardStat {
   postCount: number;
 }
 
-interface StatsResponse {
-  stats: BoardStat[];
-}
-
 export default function CommunitySidebar({
   selectedBoardId = '1',
 }: CommunitySidebarProps) {
@@ -39,97 +36,36 @@ export default function CommunitySidebar({
 
   // 게시판 통계 데이터 로드
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchBoardStats = async () => {
       try {
-        setLoading(true);
         const response = await boardAPI.getStats();
-        const statsData = (response.data as StatsResponse).stats || [];
-        setBoardStats(statsData);
-        console.log('📊 사이드바 통계 데이터 로드:', statsData);
+        setBoardStats((response.data as { stats: BoardStat[] }).stats || []);
       } catch (error) {
-        console.error('❌ 사이드바 통계 로드 에러:', error);
-        // 에러 시 기본값 사용
-        setBoardStats([]);
+        console.error('게시판 통계 조회 실패:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchBoardStats();
   }, []);
 
-  // 게시판 ID로 게시글 수 찾기
+  // 게시판별 게시물 수 조회
   const getPostCount = (boardId: string): number => {
-    if (loading) return 0;
     const stat = boardStats.find((s) => s.boardId === parseInt(boardId));
     return stat ? stat.postCount : 0;
   };
 
-  const categories: Category[] = [
-    {
-      title: '취업 정보',
-      boards: [
-        {
-          id: '1',
-          name: '기업별 취업 정보',
-          description: '기업별 채용 정보와 다양한 정보',
-          postCount: getPostCount('1'),
-        },
-        {
-          id: '2',
-          name: '면접 후기',
-          description: '실제 면접 경험담과 후기',
-          postCount: getPostCount('2'),
-        },
-        {
-          id: '3',
-          name: '취업 질문',
-          description: '취업 관련 궁금한 점 Q&A',
-          postCount: getPostCount('3'),
-        },
-        {
-          id: '4',
-          name: '취업 자료 공유',
-          description: '이력서, 자소서 등 취업 자료',
-          postCount: getPostCount('4'),
-        },
-      ],
-    },
-    {
-      title: '자유게시판',
-      boards: [
-        {
-          id: '5',
-          name: '잡담방',
-          description: '자유롭게 이야기하는 공간',
-          postCount: getPostCount('5'),
-        },
-        {
-          id: '6',
-          name: '고민상담',
-          description: '진로와 고민을 나누는 공간',
-          postCount: getPostCount('6'),
-        },
-      ],
-    },
-    {
-      title: '스터디 모집',
-      boards: [
-        {
-          id: '7',
-          name: '스터디 목록',
-          description: '스터디 그룹 모집 및 참여',
-          postCount: getPostCount('7'),
-        },
-        {
-          id: '8',
-          name: '스터디 후기',
-          description: '스터디 경험담과 후기',
-          postCount: getPostCount('8'),
-        },
-      ],
-    },
-  ];
+  // 통일된 데이터를 사용해서 카테고리 구성
+  const categories: Category[] = categoryGroups.map((group) => ({
+    title: group.title,
+    boards: group.boardIds.map((boardId) => ({
+      id: boardId,
+      name: boardInfo[boardId].name,
+      description: boardInfo[boardId].description,
+      postCount: getPostCount(boardId),
+    })),
+  }));
 
   return (
     <aside className='w-80 bg-white border-r border-gray-200 min-h-screen shadow-sm'>

@@ -1,7 +1,7 @@
 // src/app/api/comments/[commentId]/route.ts
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
-import { getProfileFromRequest } from "@/lib/getProfile";
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { getProfileFromRequest } from '@/lib/getProfile';
 
 export async function GET(
   req: NextRequest,
@@ -15,7 +15,7 @@ export async function GET(
   });
 
   if (!comment || comment.deletedAt) {
-    return NextResponse.json({ message: "Not found" }, { status: 404 });
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
   }
 
   return NextResponse.json(comment);
@@ -30,7 +30,7 @@ export async function PUT(
 
   const profile = await getProfileFromRequest(req);
   if (!profile) {
-    return NextResponse.json({ error: "인증 실패" }, { status: 401 });
+    return NextResponse.json({ error: '인증 실패' }, { status: 401 });
   }
 
   const comment = await prisma.comment.findUnique({
@@ -38,7 +38,7 @@ export async function PUT(
   });
 
   if (!comment || comment.profileId !== profile.profileId) {
-    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+    return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 });
   }
 
   const updated = await prisma.comment.update({
@@ -57,7 +57,7 @@ export async function DELETE(
 
   const profile = await getProfileFromRequest(req);
   if (!profile) {
-    return NextResponse.json({ error: "인증 실패" }, { status: 401 });
+    return NextResponse.json({ error: '인증 실패' }, { status: 401 });
   }
 
   const comment = await prisma.comment.findUnique({
@@ -65,7 +65,7 @@ export async function DELETE(
   });
 
   if (!comment || comment.profileId !== profile.profileId) {
-    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+    return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 });
   }
 
   const deleted = await prisma.comment.update({
