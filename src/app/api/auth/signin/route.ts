@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import { SignJWT } from 'jose';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'your-secret-key'
+);
 
 export async function POST(req: Request) {
   const { email, password } = await req.json();
@@ -37,9 +39,10 @@ export async function POST(req: Request) {
   }
 
   // JWT 토큰 발급
-  const token = jwt.sign({ userId: user.userId }, JWT_SECRET, {
-    expiresIn: '7d',
-  });
+  const token = await new SignJWT({ userId: user.userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('7d')
+    .sign(JWT_SECRET);
 
   // 토큰을 쿠키에 저장 (HttpOnly)
   const response = NextResponse.json({ message: '로그인 성공', token });
@@ -47,3 +50,4 @@ export async function POST(req: Request) {
 
   return response;
 }
+

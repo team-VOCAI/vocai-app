@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { verifyJwt } from "@/lib/verifyJwt";
+import { prisma } from "@/lib/prisma";
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // 인증 필요 없는 경로 패스
@@ -13,9 +15,21 @@ export function middleware(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // payload 검증은 하지 않고 토큰만 헤더에 넘겨줌
+  const payload = await verifyJwt(token);
+  if (!payload?.userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const profile = await prisma.profile.findFirst({
+    where: { userId: payload.userId },
+  });
+
+  if (!profile) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-access-token", token);
+  requestHeaders.set("x-user-profile", JSON.stringify(profile));
 
   return NextResponse.next({
     request: {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getProfileFromToken } from "@/lib/getProfile";
+import { getProfileFromRequest } from "@/lib/getProfile";
 
 // 첨부파일 타입 정의
 interface Attachment {
@@ -65,29 +65,11 @@ export async function POST(
 ) {
   try {
     // 인증 확인
-    const token = req.headers.get("x-access-token");
-    if (!token) {
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
-    }
-
-    const payload = getProfileFromToken(token);
-    if (!payload?.userId) {
-      return NextResponse.json(
-        { error: "토큰이 유효하지 않습니다." },
-        { status: 401 }
-      );
-    }
-
-    const profile = await prisma.profile.findFirst({
-      where: { userId: payload.userId },
-    });
+    const profile = await getProfileFromRequest(req);
 
     if (!profile) {
       return NextResponse.json(
-        { error: "프로필을 찾을 수 없습니다." },
+        { message: '인증되지 않았거나 프로필을 찾을 수 없습니다.' },
         { status: 401 }
       );
     }

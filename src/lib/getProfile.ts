@@ -1,11 +1,22 @@
-import jwt from "jsonwebtoken";
+import { NextRequest } from "next/server";
+import { prisma } from "./prisma";
+import { verifyJwt } from "./verifyJwt";
 
-const SECRET = process.env.JWT_SECRET || "default_secret";
+export async function getProfileFromRequest(req: NextRequest) {
+  const token = req.cookies.get("token")?.value || req.headers.get("x-access-token");
+  if (!token) return null;
 
-export function getProfileFromToken(token: string) {
-  try {
-    return jwt.verify(token, SECRET) as { userId: number; [key: string]: any };
-  } catch {
-    return null;
-  }
+  const payload = await verifyJwt(token);
+  if (!payload?.userId) return null;
+
+  const profile = await prisma.profile.findFirst({
+    where: { userId: payload.userId },
+  });
+
+  return profile;
 }
+
+export async function getProfileFromToken(token: string) {
+  return verifyJwt(token);
+}
+
