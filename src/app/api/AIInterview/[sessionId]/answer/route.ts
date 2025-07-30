@@ -15,7 +15,7 @@ export async function POST(
       return NextResponse.json({ error: "입력값 오류" }, { status: 400 });
     }
 
-    // 🔍 가장 최근 unanswered 질문 찾기
+    // 가장 최근 unanswered 질문 찾기
     const record = await prisma.mockInterviewRecord.findFirst({
       where: { sessionId: numSessionId, answerText: null },
       orderBy: { createdAt: "desc" },
@@ -34,9 +34,6 @@ export async function POST(
       record.question,
       answerText
     );
-
-    console.log("요약ㅇㅇ:", summary);
-    console.log("피드백ㅇㅇ:", feedback);
 
     const updated = await prisma.mockInterviewRecord.update({
       where: { interviewId: record.interviewId },

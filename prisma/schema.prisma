@@ -69,6 +69,7 @@ model Profile {
   user      User      @relation(fields: [userId], references: [userId])
 
   @@map("profiles")
+  MockInterviewSession MockInterviewSession[]
 }
 
 model Board {
@@ -128,4 +129,28 @@ model Attachment {
   post         Post     @relation(fields: [postId], references: [postId])
 
   @@map("attachments")
+}
+
+model MockInterviewSession {
+  sessionId  Int                    @id @default(autoincrement())
+  profileId  Int                   
+  persona    Json
+  records    MockInterviewRecord[]
+  summary      String?
+  feedback     String?
+  createdAt    DateTime              @default(now())
+  deletedAt    DateTime?
+  profile    Profile               @relation(fields: [profileId], references: [profileId], onDelete: Cascade)
+}
+
+model MockInterviewRecord {
+  interviewId  Int                  @id @default(autoincrement())
+  sessionId    Int
+  question     String
+  answerText   String?
+  summary      String?
+  feedback     String?
+  createdAt    DateTime            @default(now())
+  deletedAt    DateTime?
+  session      MockInterviewSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
 }

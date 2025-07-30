@@ -1,5 +1,7 @@
+// src/app/api/AIInterview/[sessionId]/record/route.ts
+export const runtime = "edge";
+
 import { NextRequest, NextResponse } from "next/server";
-import { POST as answerPost } from "../answer/route";
 import { genAI } from "@/lib/gemini";
 
 async function transcribeAudio(file: Blob): Promise<string> {
@@ -48,29 +50,26 @@ export async function POST(
 
     const text = await transcribeAudio(audio);
 
-    const answerReq = new NextRequest("http://internal", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answerText: text }),
-    });
+    // 이제 텍스트로 answer API를 호출함
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/AIInterview/${sessionId}/answer`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answerText: text }),
+      }
+    );
 
-    const res = await answerPost(answerReq, {
-      params: Promise.resolve({ sessionId }),
-    });
     const data = await res.json();
 
     return NextResponse.json(
       { ...data, transcribedText: text },
       { status: res.status }
     );
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("세션 종료 오류:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
+  } catch (error: any) {
+    console.error("record 에러:", error);
     return NextResponse.json(
-      { error: "Unknown error occurred" },
+      { error: error.message ?? "알 수 없는 오류" },
       { status: 500 }
     );
   }
