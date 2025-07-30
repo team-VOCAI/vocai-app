@@ -1,4 +1,3 @@
-// src/app/api/boards/[boardId]/search/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 

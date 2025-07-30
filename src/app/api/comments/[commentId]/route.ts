@@ -1,4 +1,3 @@
-// src/app/api/comments/[commentId]/route.ts
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getProfileFromRequest } from '@/lib/getProfile';

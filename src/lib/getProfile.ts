@@ -1,18 +1,11 @@
-// src/lib/getProfileFromRequest.ts
-import { NextRequest } from 'next/server';
-import { verifyJwt } from './verifyJwt';
-import { prisma } from './prisma';
+import jwt from "jsonwebtoken";
 
-export async function getProfileFromRequest(req: NextRequest) {
-  const token = req.cookies.get('token')?.value;
-  if (!token) return null;
+const SECRET = process.env.JWT_SECRET || "default_secret";
 
-  const payload = verifyJwt(token);
-  if (!payload?.userId) return null;
-
-  const profile = await prisma.profile.findFirst({
-    where: { userId: payload.userId },
-  });
-
-  return profile;
+export function getProfileFromToken(token: string) {
+  try {
+    return jwt.verify(token, SECRET) as { userId: number; [key: string]: any };
+  } catch {
+    return null;
+  }
 }
