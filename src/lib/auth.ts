@@ -15,12 +15,17 @@ export const authOptions: NextAuthConfig = {
   callbacks: {
     // 구글 로그인 시 User/Profile 자동 생성 및 이메일 중복 계정 자동 연결
     async signIn({ user, account, profile }: any) {
+      console.log('user', user);
       if (account?.provider === "google") {
         const googleId = profile?.sub || user.id;
         if (!googleId) return false;
         // 1. 이메일로 기존 유저 찾기
+        if (typeof user.email !== 'string') {
+          return false;
+        }
+        
         const existingUser = await prisma.user.findUnique({
-          where: { email: typeof user.email === 'string' ? user.email : undefined },
+          where: { email: user.email },
         });
         if (existingUser) {
           // 2. 이미 계정이 있으면, 해당 userId로 account 연결
@@ -74,16 +79,31 @@ export const authOptions: NextAuthConfig = {
       }
       return true;
     },
-    // 세션에 사용자 id 추가
-    async session({ session, user }: any) {
-      if (session.user) session.user.id = user.id;
-      return session;
-    },
-    // JWT 토큰에 사용자 id 추가
+    
+        // JWT 토큰에 사용자 id 추가
     async jwt({ token, user }: any) {
-      if (user) token.id = user.id;
+      console.log('1 JWT 콜백의 user:', user);
+      if (user) {
+        console.log('👤 JWT 콜백의 user:', user);
+        token.id = user.id ?? user.userId ?? null;
+        token.email = user.email ?? null;
+      }
       return token;
     },
+    // 세션에 사용자 id 추가
+    async session({ session, token }: any) {
+      if (!session.user) {
+        session.user = {};
+        console.log('세션', session.user);
+      }
+        session.user.id = token.id ?? null;
+        console.log('토큰id', token.id);
+        session.user.email = token.email ?? null;
+        console.log('토큰email', token.email);
+      console.log('📦 최종 session:', session);
+      return session;
+    },
+
   },
   // 커스텀 로그인 페이지 경로
   pages: {

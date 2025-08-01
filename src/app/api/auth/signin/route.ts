@@ -6,10 +6,10 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json();
+  const { loginId, password } = await req.json();
 
   // Profile에서 email로 찾기
-  const profile = await prisma.profile.findFirst({ where: { email } });
+  const profile = await prisma.user.findFirst({ where: { loginId } });
   if (!profile) {
     return NextResponse.json({ error: '존재하지 않는 계정입니다.' }, { status: 401 });
   }

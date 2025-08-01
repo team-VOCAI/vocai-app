@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import ContainerX from '@/components/ContainerX';
 import Footer from '@/components/Footer';
 import { UserReviewCarousel } from '@/features/home/components';
+import GoogleDeleteButton from '@/components/GoogleDeleteButton';
 import {
   HiLightBulb,
   HiVideoCamera,
@@ -523,6 +524,7 @@ export default function Home() {
       </section>
 
       <Footer />
+      <GoogleDeleteButton />
     </div>
   );
 }

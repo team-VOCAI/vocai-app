@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function DELETE(req: Request) {
   const { password } = await req.json();
-  if (password) {
+  if (typeof password === 'string') {
 
   // 1. Authorization 헤더에서 토큰 시도
   let token = req.headers.get('authorization')?.replace('Bearer ', '');
@@ -68,7 +68,12 @@ export async function DELETE(req: Request) {
   let email = null;
   try {
     const session = await auth();
+    console.log('🔥 세션 정보:', session);
+    if(!session) {
+      return NextResponse.json({error: '인증이 필요합니다.'}, {status: 401});
+    }
     if (session && session.user?.email) {
+      console.log('✅ 세션에서 이메일:', session.user.email);
       email = session.user.email;
     }
   } catch (err) {
