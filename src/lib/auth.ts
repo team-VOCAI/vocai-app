@@ -15,6 +15,8 @@ export const authOptions: NextAuthConfig = {
   callbacks: {
     // 구글 로그인 시 User/Profile 자동 생성 및 이메일 중복 계정 자동 연결
     async signIn({ user, account, profile }: any) {
+      console.log('account', account);
+      console.log('profile', profile);
       console.log('user', user);
       if (account?.provider === "google") {
         const googleId = profile?.sub || user.id;
@@ -87,6 +89,8 @@ export const authOptions: NextAuthConfig = {
         console.log('👤 JWT 콜백의 user:', user);
         token.id = user.id ?? user.userId ?? null;
         token.email = user.email ?? null;
+        console.log('token.id', token.id);
+        console.log('token.email', token.email);
       }
       return token;
     },
