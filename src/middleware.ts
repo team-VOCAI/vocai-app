@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PROTECTED_PATHS = [
-  "/dashboard",
-  "/community/boards",
-  "/profile",
-  "/settings",
+  //보호하고 싶은 경로 아래처럼 작성
+  // "/dashboard",
+  // "/community/boards",
+  // "/profile",
+  // "/settings",
 ];
 
 export function middleware(req: NextRequest) {
@@ -29,9 +30,10 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/community/boards/:path*",
-    "/profile/:path*",
-    "/settings/:path*",
+    //경로 여기도 마찬가지
+    // "/dashboard/:path*",
+    // "/community/boards/:path*",
+    // "/profile/:path*",
+    // "/settings/:path*",
   ],
 };
