@@ -123,12 +123,12 @@ export default function Navbar() {
             >
               커뮤니티
             </Link>
-            <a
-              href='#'
+            <Link
+              href='/interview'
               className='text-base font-medium text-[var(--text-secondary)] px-2 py-1 rounded hover:bg-[var(--gray-100)] hover:text-[var(--text-accent)] transition-colors focus:outline-none'
             >
               면접 준비
-            </a>
+            </Link>
           </div>
         </div>
 
