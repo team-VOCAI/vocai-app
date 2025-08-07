@@ -50,8 +50,8 @@ export async function POST(
 
     const text = await transcribeAudio(audio);
 
-    // 이제 텍스트로 answer API를 호출함
-    const res = await fetch(
+    // 답변 저장 후 다음 질문 생성
+    const answerRes = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/AIInterview/${sessionId}/answer`,
       {
         method: "POST",
@@ -60,17 +60,31 @@ export async function POST(
       }
     );
 
-    const data = await res.json();
+    if (!answerRes.ok) {
+      const err = await answerRes.json();
+      return NextResponse.json(err, { status: answerRes.status });
+    }
+
+    const questionRes = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/AIInterview/${sessionId}/question`,
+      { method: "POST" }
+    );
+
+    if (!questionRes.ok) {
+      const err = await questionRes.json();
+      return NextResponse.json(err, { status: questionRes.status });
+    }
+
+    const answerData = await answerRes.json();
+    const questionData = await questionRes.json();
 
     return NextResponse.json(
-      { ...data, transcribedText: text },
-      { status: res.status }
+      { ...answerData, question: questionData.question, transcribedText: text },
+      { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("record 에러:", error);
-    return NextResponse.json(
-      { error: error.message ?? "알 수 없는 오류" },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "알 수 없는 오류";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -6,6 +6,7 @@ const PROTECTED_PATHS = [
   // "/dashboard",
   // "/community/boards",
   "/profile",
+  "/interview",
   // "/settings",
 ];
 
@@ -34,6 +35,7 @@ export const config = {
     // "/dashboard/:path*",
     // "/community/boards/:path*",
     "/profile/:path*",
+    "/interview/:path*",
     // "/settings/:path*",
   ],
 };
