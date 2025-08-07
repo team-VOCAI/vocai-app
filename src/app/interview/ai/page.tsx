@@ -14,9 +14,19 @@ interface Session {
   createdAt: string;
 }
 
+interface RecordItem {
+  question: string;
+  answerText?: string | null;
+  summary?: string | null;
+  feedback?: string | null;
+}
+
 export default function AIInterviewPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<number | null>(null);
+  const [records, setRecords] = useState<RecordItem[]>([]);
+  const [sessionSummary, setSessionSummary] = useState<string | null>(null);
+  const [sessionFeedback, setSessionFeedback] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [ending, setEnding] = useState(false);
@@ -47,7 +57,10 @@ export default function AIInterviewPage() {
       if (res.ok) {
         setSessionId(data.sessionId);
         setMessages([{ role: "assistant", content: data.question }]);
+        setRecords([{ question: data.question }]);
         setEnded(false);
+        setSessionSummary(null);
+        setSessionFeedback(null);
         fetchSessions();
       }
     } finally {
@@ -59,14 +72,22 @@ export default function AIInterviewPage() {
     const res = await fetch(`/api/AIInterview/${id}`);
     if (res.ok) {
       const data = await res.json();
-      const msgs: Message[] = [];
-      data.records.forEach((r: { question: string; answerText: string | null }) => {
-        msgs.push({ role: "assistant", content: r.question });
-        if (r.answerText) msgs.push({ role: "user", content: r.answerText });
-      });
-      setMessages(msgs);
+      if (data.ended) {
+        setRecords(data.records.filter((r: RecordItem) => r.answerText));
+        setMessages([]);
+      } else {
+        setRecords(data.records);
+        const msgs: Message[] = [];
+        data.records.forEach((r: RecordItem) => {
+          msgs.push({ role: "assistant", content: r.question });
+          if (r.answerText) msgs.push({ role: "user", content: r.answerText });
+        });
+        setMessages(msgs);
+      }
       setSessionId(id);
       setEnded(data.ended);
+      setSessionSummary(data.summary ?? null);
+      setSessionFeedback(data.feedback ?? null);
     }
   };
 
@@ -79,8 +100,13 @@ export default function AIInterviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId }),
       });
+      const data = await res.json();
       if (res.ok) {
         setEnded(true);
+        setSessionSummary(data.summary);
+        setSessionFeedback(data.feedback);
+        setRecords((prev) => prev.filter((r) => r.answerText));
+        setMessages([]);
         fetchSessions();
       }
     } finally {
@@ -100,6 +126,20 @@ export default function AIInterviewPage() {
       });
       const data = await res.json();
       if (res.ok) {
+        setRecords((prev) => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          if (lastIndex >= 0) {
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              answerText: data.transcribedText,
+              summary: data.summary,
+              feedback: data.feedback,
+            };
+          }
+          updated.push({ question: data.question });
+          return updated;
+        });
         setMessages((prev) => [
           ...prev,
           { role: "user", content: data.transcribedText },
@@ -148,10 +188,45 @@ export default function AIInterviewPage() {
         </aside>
         <div className="flex flex-col flex-1 max-w-3xl mx-auto w-full">
           <div className="flex-1 overflow-y-auto p-4">
-            {messages.length === 0 ? (
+            {!sessionId ? (
               <div className="h-full flex items-center justify-center text-gray-500">
                 좌측에서 새 면접을 시작하세요.
               </div>
+            ) : ended ? (
+              <>
+                {records.map((r, i) => (
+                  <div key={i} className="mb-6">
+                    <div className="mb-2 flex justify-start">
+                      <div className="px-4 py-2 rounded-2xl max-w-[75%] shadow bg-white border">
+                        {r.question}
+                      </div>
+                    </div>
+                    {r.answerText && (
+                      <div className="mb-2 flex justify-end">
+                        <div className="px-4 py-2 rounded-2xl max-w-[75%] shadow bg-[var(--primary)] text-white">
+                          {r.answerText}
+                        </div>
+                      </div>
+                    )}
+                    {r.summary && r.feedback && (
+                      <div className="ml-4 mt-2 text-sm text-gray-700">
+                        <p className="font-semibold">요약</p>
+                        <p>{r.summary}</p>
+                        <p className="font-semibold mt-2">피드백</p>
+                        <p>{r.feedback}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {sessionSummary && sessionFeedback && (
+                  <div className="mt-8 p-4 rounded-2xl bg-white border">
+                    <h3 className="font-semibold mb-2">세션 요약</h3>
+                    <p className="mb-4">{sessionSummary}</p>
+                    <h3 className="font-semibold mb-2">세션 피드백</h3>
+                    <p>{sessionFeedback}</p>
+                  </div>
+                )}
+              </>
             ) : (
               <>
                 {messages.map((m, i) => (
