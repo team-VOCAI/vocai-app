@@ -17,7 +17,10 @@ interface Session {
 export default function AIInterviewPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const [ended, setEnded] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
 
   const fetchSessions = async () => {
@@ -34,7 +37,7 @@ export default function AIInterviewPage() {
 
   const startSession = async () => {
     try {
-      setLoading(true);
+      setStarting(true);
       const res = await fetch("/api/AIInterview/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,28 +47,67 @@ export default function AIInterviewPage() {
       if (res.ok) {
         setSessionId(data.sessionId);
         setMessages([{ role: "assistant", content: data.question }]);
+        setEnded(false);
         fetchSessions();
       }
     } finally {
-      setLoading(false);
+      setStarting(false);
+    }
+  };
+
+  const loadSession = async (id: number) => {
+    const res = await fetch(`/api/AIInterview/${id}`);
+    if (res.ok) {
+      const data = await res.json();
+      const msgs: Message[] = [];
+      data.records.forEach((r: { question: string; answerText: string | null }) => {
+        msgs.push({ role: "assistant", content: r.question });
+        if (r.answerText) msgs.push({ role: "user", content: r.answerText });
+      });
+      setMessages(msgs);
+      setSessionId(id);
+      setEnded(data.ended);
+    }
+  };
+
+  const endSession = async () => {
+    if (!sessionId) return;
+    try {
+      setEnding(true);
+      const res = await fetch("/api/AIInterview/end", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      if (res.ok) {
+        setEnded(true);
+        fetchSessions();
+      }
+    } finally {
+      setEnding(false);
     }
   };
 
   const handleAudioComplete = async (audio: Blob) => {
-    if (!sessionId) return;
+    if (!sessionId || ended) return;
     const form = new FormData();
     form.append("file", audio, "audio.webm");
-    const res = await fetch(`/api/AIInterview/${sessionId}/record`, {
-      method: "POST",
-      body: form,
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", content: data.transcribedText },
-        { role: "assistant", content: data.question },
-      ]);
+    setProcessing(true);
+    try {
+      const res = await fetch(`/api/AIInterview/${sessionId}/record`, {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "user", content: data.transcribedText },
+          { role: "assistant", content: data.question },
+        ]);
+      }
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -77,10 +119,10 @@ export default function AIInterviewPage() {
           <div className="p-4">
             <button
               onClick={startSession}
-              disabled={loading}
+              disabled={starting}
               className="w-full px-4 py-2 bg-[var(--primary)] text-white rounded-lg shadow hover:bg-[var(--primary-hover)] disabled:opacity-50"
             >
-              {loading ? "시작중..." : "새 면접 시작하기"}
+              {starting ? "시작중..." : "새 면접 시작하기"}
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
@@ -89,8 +131,15 @@ export default function AIInterviewPage() {
             ) : (
               <ul className="space-y-2">
                 {sessions.map((s) => (
-                  <li key={s.sessionId} className="text-sm text-gray-700 truncate">
-                    세션 {s.sessionId}
+                  <li key={s.sessionId}>
+                    <button
+                      onClick={() => loadSession(s.sessionId)}
+                      className={`w-full text-left text-sm truncate px-2 py-1 rounded hover:bg-gray-100 ${
+                        s.sessionId === sessionId ? "bg-gray-200" : "text-gray-700"
+                      }`}
+                    >
+                      세션 {s.sessionId}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -104,27 +153,54 @@ export default function AIInterviewPage() {
                 좌측에서 새 면접을 시작하세요.
               </div>
             ) : (
-              messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={`mb-4 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-                >
+              <>
+                {messages.map((m, i) => (
                   <div
-                    className={`px-4 py-2 rounded-2xl max-w-[75%] shadow ${
-                      m.role === "user"
-                        ? "bg-[var(--primary)] text-white"
-                        : "bg-white border"
-                    }`}
+                    key={i}
+                    className={`mb-4 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    {m.content}
+                    <div
+                      className={`px-4 py-2 rounded-2xl max-w-[75%] shadow ${
+                        m.role === "user"
+                          ? "bg-[var(--primary)] text-white"
+                          : "bg-white border"
+                      }`}
+                    >
+                      {m.content}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+                {processing && (
+                  <div className="mb-4 flex justify-start">
+                    <div className="px-4 py-2 rounded-2xl max-w-[75%] shadow bg-white border text-gray-500">
+                      응답을 생성 중...
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
-          {sessionId && (
-            <div className="p-4 border-t bg-white flex justify-center">
+          {sessionId && !ended && (
+            <div className="p-4 border-t bg-white flex flex-col items-center">
               <Recorder onComplete={handleAudioComplete} />
+              <button
+                onClick={endSession}
+                disabled={ending}
+                className="mt-2 text-sm text-gray-600 underline disabled:opacity-50"
+              >
+                {ending ? "종료중..." : "세션 종료"}
+              </button>
+              <p className="mt-2 text-xs text-gray-500">
+                마이크 버튼을 눌러 녹음을 시작하고 다시 눌러 종료하세요.
+              </p>
+              {processing && (
+                <p className="mt-1 text-xs text-gray-500">응답을 처리 중입니다...</p>
+              )}
+            </div>
+          )}
+          {sessionId && ended && (
+            <div className="p-4 border-t bg-white text-center text-gray-500">
+              세션이 종료되었습니다.
             </div>
           )}
         </div>
