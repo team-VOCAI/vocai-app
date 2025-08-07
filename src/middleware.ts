@@ -5,7 +5,7 @@ const PROTECTED_PATHS = [
   //보호하고 싶은 경로 아래처럼 작성
   // "/dashboard",
   // "/community/boards",
-  // "/profile",
+  "/profile",
   // "/settings",
 ];
 
@@ -33,7 +33,7 @@ export const config = {
     //경로 여기도 마찬가지
     // "/dashboard/:path*",
     // "/community/boards/:path*",
-    // "/profile/:path*",
+    "/profile/:path*",
     // "/settings/:path*",
   ],
 };
