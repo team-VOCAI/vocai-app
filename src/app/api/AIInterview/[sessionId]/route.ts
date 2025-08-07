@@ -38,9 +38,16 @@ export async function GET(
     const records = session.records.map((r) => ({
       question: r.question,
       answerText: r.answerText,
+      summary: r.summary,
+      feedback: r.feedback,
     }));
 
-    return NextResponse.json({ records, ended: session.summary !== null });
+    return NextResponse.json({
+      records,
+      ended: session.summary !== null,
+      summary: session.summary,
+      feedback: session.feedback,
+    });
   } catch (error) {
     console.error("세션 조회 오류:", error);
     return NextResponse.json(
