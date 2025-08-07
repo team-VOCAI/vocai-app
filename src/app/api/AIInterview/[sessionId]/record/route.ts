@@ -66,11 +66,9 @@ export async function POST(
       { ...data, transcribedText: text },
       { status: res.status }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("record 에러:", error);
-    return NextResponse.json(
-      { error: error.message ?? "알 수 없는 오류" },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "알 수 없는 오류";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
