@@ -2,8 +2,13 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { FaMicrophone, FaStop } from "react-icons/fa";
 
-export default function Recorder({ onComplete }: { onComplete: (audioBlob: Blob) => void }) {
+export default function Recorder({
+  onComplete,
+}: {
+  onComplete: (audioBlob: Blob) => void;
+}) {
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
@@ -35,9 +40,10 @@ export default function Recorder({ onComplete }: { onComplete: (audioBlob: Blob)
   return (
     <button
       onClick={toggleRecording}
-      className={`rounded-full px-4 py-2 mt-4 ${recording ? "bg-red-500" : "bg-blue-500"} text-white`}
+      className={`mt-4 w-12 h-12 rounded-full flex items-center justify-center text-white shadow-md focus:outline-none ${recording ? "bg-red-500" : "bg-[var(--primary)]"}`}
+      aria-label={recording ? "녹음 중지" : "녹음 시작"}
     >
-      {recording ? "녹음 중지" : "녹음 시작"}
+      {recording ? <FaStop /> : <FaMicrophone />}
     </button>
   );
 }
