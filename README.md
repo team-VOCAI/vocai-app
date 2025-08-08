@@ -20,6 +20,18 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Local Whisper transcription service
+
+The interview recording API uses a local [Whisper](https://github.com/openai/whisper) service for speech‑to‑text. To run the service:
+
+```bash
+cd whisper_service
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Optionally set the `WHISPER_URL` environment variable if the service runs on a different address.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
