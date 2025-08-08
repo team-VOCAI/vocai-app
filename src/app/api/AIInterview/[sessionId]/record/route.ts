@@ -2,34 +2,25 @@
 export const runtime = "edge";
 
 import { NextRequest, NextResponse } from "next/server";
-import { genAI } from "@/lib/gemini";
 
 async function transcribeAudio(file: Blob): Promise<string> {
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const base64 = buffer.toString("base64");
+  const fd = new FormData();
+  fd.append("file", file, "audio.webm");
 
-  const result = await genAI.models.generateContent({
-    model: "gemini-2.5-pro",
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            inlineData: {
-              mimeType: "audio/webm",
-              data: base64,
-            },
-          },
-          { text: "위 음성을 한국어 텍스트로 전사해줘." },
-        ],
-      },
-    ],
-  });
+  const url =
+    process.env.WHISPER_URL ?? "http://localhost:8000/transcribe";
+  const res = await fetch(url, { method: "POST", body: fd });
 
-  const text = result.text;
-  if (!text) throw new Error("Transcription failed");
+  if (!res.ok) {
+    throw new Error("Transcription failed");
+  }
 
-  return text.trim();
+  const data = (await res.json()) as { text?: string };
+  if (!data.text) {
+    throw new Error("Transcription failed");
+  }
+
+  return data.text.trim();
 }
 
 export async function POST(req: NextRequest) {
