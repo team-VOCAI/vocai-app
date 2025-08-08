@@ -126,7 +126,6 @@ export default function AIInterviewPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        // 먼저 전사된 텍스트를 바로 표시
         setRecords((prev) => {
           const updated = [...prev];
           const lastIndex = updated.length - 1;
@@ -134,53 +133,18 @@ export default function AIInterviewPage() {
             updated[lastIndex] = {
               ...updated[lastIndex],
               answerText: data.transcribedText,
+              summary: data.summary,
+              feedback: data.feedback,
             };
           }
+          updated.push({ question: data.question });
           return updated;
         });
         setMessages((prev) => [
           ...prev,
           { role: "user", content: data.transcribedText },
+          { role: "assistant", content: data.question },
         ]);
-
-        // 답변 저장 및 피드백 생성
-        const answerRes = await fetch(`/api/AIInterview/${sessionId}/answer`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answerText: data.transcribedText }),
-        });
-        const answerData = await answerRes.json();
-        if (answerRes.ok) {
-          setRecords((prev) => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            if (lastIndex >= 0) {
-              updated[lastIndex] = {
-                ...updated[lastIndex],
-                summary: answerData.summary,
-                feedback: answerData.feedback,
-              };
-            }
-            return updated;
-          });
-        }
-
-        // 다음 질문 생성
-        const questionRes = await fetch(`/api/AIInterview/${sessionId}/question`, {
-          method: "POST",
-        });
-        const questionData = await questionRes.json();
-        if (questionRes.ok) {
-          setRecords((prev) => {
-            const updated = [...prev];
-            updated.push({ question: questionData.question });
-            return updated;
-          });
-          setMessages((prev) => [
-            ...prev,
-            { role: "assistant", content: questionData.question },
-          ]);
-        }
       }
     } finally {
       setProcessing(false);

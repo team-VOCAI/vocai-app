@@ -1,32 +1,24 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import ContainerX from '@/components/ContainerX';
 import { signinSchema, type SigninFormData } from '@/lib/schemas/auth';
 import { authAPI, ApiError } from '@/lib/api';
-import { redirectAfterLogin, setRedirectUrl } from '@/lib/redirect';
+import { redirectAfterLogin } from '@/lib/redirect';
 
 export default function SignInPage() {
   const handleGoogleSignIn = () => {
     signIn('google', { callbackUrl: '/' });
   };
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
-
-  useEffect(() => {
-    const redirect = searchParams.get('redirect');
-    if (redirect) {
-      setRedirectUrl(redirect);
-    }
-  }, [searchParams]);
 
   // React Hook Form 설정
   const {
