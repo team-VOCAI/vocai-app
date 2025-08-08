@@ -23,12 +23,8 @@ async function transcribeAudio(file: Blob): Promise<string> {
   return data.text.trim();
 }
 
-export async function POST(
-  req: NextRequest,
-  context: { params: Promise<{ sessionId: string }> }
-) {
+export async function POST(req: NextRequest) {
   try {
-    const { sessionId } = await context.params;
     const formData = await req.formData();
     const audio = formData.get("file") as Blob | null;
 
@@ -41,38 +37,8 @@ export async function POST(
 
     const text = await transcribeAudio(audio);
 
-    // 답변 저장 후 다음 질문 생성
-    const answerRes = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/AIInterview/${sessionId}/answer`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answerText: text }),
-      }
-    );
-
-    if (!answerRes.ok) {
-      const err = await answerRes.json();
-      return NextResponse.json(err, { status: answerRes.status });
-    }
-
-    const questionRes = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/AIInterview/${sessionId}/question`,
-      { method: "POST" }
-    );
-
-    if (!questionRes.ok) {
-      const err = await questionRes.json();
-      return NextResponse.json(err, { status: questionRes.status });
-    }
-
-    const answerData = await answerRes.json();
-    const questionData = await questionRes.json();
-
-    return NextResponse.json(
-      { ...answerData, question: questionData.question, transcribedText: text },
-      { status: 200 }
-    );
+    // 전사된 텍스트만 반환하고 답변 저장과 다음 질문 생성은 클라이언트에서 처리
+    return NextResponse.json({ transcribedText: text }, { status: 200 });
   } catch (error: unknown) {
     console.error("record 에러:", error);
     const message = error instanceof Error ? error.message : "알 수 없는 오류";
