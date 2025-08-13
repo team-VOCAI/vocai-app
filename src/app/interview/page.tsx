@@ -22,6 +22,8 @@ export default function InterviewHomePage() {
     techStack: "",
   });
   const [saving, setSaving] = useState(false);
+  const [hasPersona, setHasPersona] = useState(false);
+  const [editing, setEditing] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -36,6 +38,10 @@ export default function InterviewHomePage() {
             difficulty: data.difficulty ?? "쉬움",
             techStack: (data.techStack ?? []).join(", "),
           });
+          setHasPersona(true);
+          setEditing(false);
+        } else {
+          setEditing(true);
         }
       }
     };
@@ -66,6 +72,8 @@ export default function InterviewHomePage() {
       }),
     });
     setSaving(false);
+    setHasPersona(true);
+    setEditing(false);
   };
 
   return (
@@ -76,53 +84,85 @@ export default function InterviewHomePage() {
 
         <div className="mb-10 bg-white p-6 rounded-2xl">
           <h2 className="text-xl font-semibold mb-4">면접 페르소나 설정</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              name="company"
-              value={persona.company}
-              onChange={handleChange}
-              placeholder="회사"
-              className="border p-2 rounded"
-            />
-            <input
-              name="job"
-              value={persona.job}
-              onChange={handleChange}
-              placeholder="직무"
-              className="border p-2 rounded"
-            />
-            <input
-              name="careerLevel"
-              value={persona.careerLevel}
-              onChange={handleChange}
-              placeholder="경력 수준"
-              className="border p-2 rounded"
-            />
-            <select
-              name="difficulty"
-              value={persona.difficulty}
-              onChange={handleChange}
-              className="border p-2 rounded"
-            >
-              <option value="쉬움">쉬움</option>
-              <option value="중간">중간</option>
-              <option value="어려움">어려움</option>
-            </select>
-            <input
-              name="techStack"
-              value={persona.techStack}
-              onChange={handleChange}
-              placeholder="기술 스택 (콤마로 구분)"
-              className="border p-2 rounded md:col-span-2"
-            />
-          </div>
-          <button
-            onClick={savePersona}
-            disabled={saving}
-            className="mt-4 px-4 py-2 bg-[var(--primary)] text-white rounded-lg disabled:opacity-50"
-          >
-            저장
-          </button>
+          {editing ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  name="company"
+                  value={persona.company}
+                  onChange={handleChange}
+                  placeholder="회사"
+                  className="border p-2 rounded"
+                />
+                <input
+                  name="job"
+                  value={persona.job}
+                  onChange={handleChange}
+                  placeholder="직무"
+                  className="border p-2 rounded"
+                />
+                <input
+                  name="careerLevel"
+                  value={persona.careerLevel}
+                  onChange={handleChange}
+                  placeholder="경력 수준"
+                  className="border p-2 rounded"
+                />
+                <select
+                  name="difficulty"
+                  value={persona.difficulty}
+                  onChange={handleChange}
+                  className="border p-2 rounded"
+                >
+                  <option value="쉬움">쉬움</option>
+                  <option value="중간">중간</option>
+                  <option value="어려움">어려움</option>
+                </select>
+                <input
+                  name="techStack"
+                  value={persona.techStack}
+                  onChange={handleChange}
+                  placeholder="기술 스택 (콤마로 구분)"
+                  className="border p-2 rounded md:col-span-2"
+                />
+              </div>
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={savePersona}
+                  disabled={saving}
+                  className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg disabled:opacity-50"
+                >
+                  저장
+                </button>
+                {hasPersona && (
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="px-4 py-2 border rounded-lg"
+                  >
+                    취소
+                  </button>
+                )}
+              </div>
+            </>
+          ) : hasPersona ? (
+            <>
+              <div className="space-y-2">
+                <p><strong>회사:</strong> {persona.company}</p>
+                <p><strong>직무:</strong> {persona.job}</p>
+                <p><strong>경력 수준:</strong> {persona.careerLevel}</p>
+                <p><strong>난이도:</strong> {persona.difficulty}</p>
+                <p><strong>기술 스택:</strong> {persona.techStack}</p>
+              </div>
+              <button
+                onClick={() => setEditing(true)}
+                className="mt-4 px-4 py-2 border rounded-lg"
+              >
+                수정
+              </button>
+            </>
+          ) : (
+            <p className="text-gray-500">저장된 페르소나가 없습니다. 설정해 주세요.</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
