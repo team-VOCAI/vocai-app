@@ -50,8 +50,6 @@ export default function AIInterviewPage() {
       setStarting(true);
       const res = await fetch("/api/AIInterview/start", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ persona: "기본 면접관" }),
       });
       const data = await res.json();
       if (res.ok) {
