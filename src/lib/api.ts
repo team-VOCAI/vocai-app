@@ -246,6 +246,9 @@ export const userAPI = {
   getProfile: async () => {
     return apiClient.get('/user/profile');
   },
+  getMe: async () => {
+    return apiClient.get('/user/me');
+  },
 };
 
 // 기본 API 클라이언트도 export (커스텀 요청용)
