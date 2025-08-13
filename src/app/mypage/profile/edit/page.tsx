@@ -1,57 +1,109 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { getUserProfile, updateUserProfile } from '@/lib/api'; // API 호출 함수 임포트
+import { useRouter } from 'next/navigation';
+import { userAPI } from '@/lib/api';
+import { authAPI } from '@/lib/api';
+import { HiUser, HiPencilSquare } from 'react-icons/hi2';
 
 interface UserProfile {
-  email: string;
-  name: string;
-  nickname: string;
-  phoneNum: string;
+  email?: string;
+  name?: string;
+  nickName?: string;
+  phone?: string;
 }
 
 export default function EditProfilePage() {
-  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    name: '',
+    nickName: '',
+    phone: '',
+  });
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // 닉네임 중복 체크 상태
+  const [nickChecked, setNickChecked] = useState(false);
+  const [nickCheckMsg, setNickCheckMsg] = useState('');
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const data = await getUserProfile();
-        setProfile(data);
-      } catch (err) {
-        setError('프로필 정보를 불러오는데 실패했습니다.');
-        console.error('Failed to fetch user profile:', err);
+        const res = await userAPI.getMe();
+        setProfile({
+          email: res.data.email,
+          name: res.data.profile?.name ?? '',
+          nickName: res.data.profile?.nickName ?? '',
+          phone: res.data.profile?.phoneNum ?? '',
+        });
+        setForm({
+          name: res.data.profile?.name ?? '',
+          nickName: res.data.profile?.nickName ?? '',
+          phone: res.data.profile?.phoneNum ?? '',
+        });
+      } catch {
+        setProfile(null);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProfile();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfile(prev => prev ? { ...prev, [name]: value } : null);
+    setForm(prev => ({ ...prev, [name]: value }));
+
+    // 닉네임 값이 바뀌면 중복 체크 초기화
+    if (name === 'nickName') {
+      setNickChecked(false);
+      setNickCheckMsg('');
+    }
+  };
+
+  // 닉네임 중복 체크
+  const handleNickCheck = async () => {
+    if (!form.nickName) return;
+    try {
+      const res = await authAPI.checkNicknameDuplicate(form.nickName);
+      if (res.data.available) {
+        setNickChecked(true);
+        setNickCheckMsg('사용 가능한 닉네임입니다.');
+      } else {
+        setNickChecked(false);
+        setNickCheckMsg('이미 사용 중인 닉네임입니다.');
+      }
+    } catch {
+      setNickChecked(false);
+      setNickCheckMsg('닉네임 중복 체크 실패');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile) return;
+    setError(null);
+
+    // 닉네임 중복 체크 통과해야 저장 가능
+    if (!nickChecked) {
+      setError('닉네임 중복 확인을 해주세요.');
+      return;
+    }
 
     setIsSaving(true);
-    setError(null);
     try {
-      await updateUserProfile(profile); // 프로필 업데이트 API 호출
-      alert('프로필이 성공적으로 업데이트되었습니다.');
-      router.push('/mypage/profile'); // 수정 후 프로필 보기 페이지로 이동
-    } catch (err) {
-      setError('프로필 업데이트에 실패했습니다.');
-      console.error('Failed to update user profile:', err);
+      await userAPI.updateMe({
+        name: form.name,
+        nickName: form.nickName,
+        phone: form.phone,
+      });
+      alert('프로필이 성공적으로 수정되었습니다.');
+      router.push('/mypage/profile');
+    } catch {
+      setError('프로필 수정에 실패했습니다.');
     } finally {
       setIsSaving(false);
     }
@@ -61,76 +113,78 @@ export default function EditProfilePage() {
     return <div className="text-center py-8">프로필 정보를 불러오는 중...</div>;
   }
 
-  if (error) {
-    return <div className="text-center py-8 text-red-500">{error}</div>;
-  }
-
-  if (!profile) {
-    return <div className="text-center py-8">프로필 정보가 없습니다.</div>;
-  }
-
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md">
-      <h1 className="text-3xl font-bold mb-6">프로필 수정</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">이메일:</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={profile.email}
-            readOnly // 이메일은 수정 불가
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 bg-gray-100 leading-tight focus:outline-none focus:shadow-outline"
-          />
+    <div className="w-full relative min-h-[400px] pl-2">
+      <div className="flex items-center gap-5 mb-8">
+        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center shadow-inner">
+          <HiUser className="w-9 h-9 text-blue-500" />
         </div>
         <div>
-          <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">이름:</label>
+          <div className="text-lg font-bold text-gray-800">{profile?.nickName || '닉네임 없음'}</div>
+          <div className="text-sm text-gray-400">{profile?.email || '-'}</div>
+        </div>
+      </div>
+      <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
+        <div className="flex items-center gap-4 mb-4">
+          <label className="w-24 text-gray-700">이름</label>
           <input
             type="text"
-            id="name"
             name="name"
-            value={profile.name}
+            value={form.name}
             onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="flex-1 border rounded px-3 py-2"
+            required
           />
         </div>
-        <div>
-          <label htmlFor="nickname" className="block text-gray-700 text-sm font-bold mb-2">닉네임:</label>
+        <div className="flex items-center gap-4 mb-4">
+          <label className="w-24 text-gray-700">닉네임</label>
           <input
             type="text"
-            id="nickname"
-            name="nickname"
-            value={profile.nickname}
+            name="nickName"
+            value={form.nickName}
             onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="flex-1 border rounded px-3 py-2"
+            required
           />
+          <button
+            type="button"
+            className="px-3 py-2 bg-gray-200 rounded text-gray-700 font-semibold"
+            onClick={handleNickCheck}
+            disabled={!form.nickName}
+          >
+            중복확인
+          </button>
         </div>
-        <div>
-          <label htmlFor="phoneNum" className="block text-gray-700 text-sm font-bold mb-2">전화번호:</label>
+        {nickCheckMsg && (
+          <div className={`ml-24 mb-2 text-sm ${nickChecked ? 'text-green-600' : 'text-red-500'}`}>
+            {nickCheckMsg}
+          </div>
+        )}
+        <div className="flex items-center gap-4 mb-4">
+          <label className="w-24 text-gray-700">전화번호</label>
           <input
             type="text"
-            id="phoneNum"
-            name="phoneNum"
-            value={profile.phoneNum}
+            name="phone"
+            value={form.phone}
             onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="flex-1 border rounded px-3 py-2"
           />
         </div>
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="mt-4 px-6 py-3 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
-        >
-          {isSaving ? '저장 중...' : '저장하기'}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push('/mypage/profile')}
-          className="ml-4 mt-4 px-6 py-3 bg-gray-300 text-gray-800 font-semibold rounded-md shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-        >
-          취소
-        </button>
+        <div className="flex items-center gap-4 mb-4">
+          <label className="w-24 text-gray-700">이메일</label>
+          <span className="text-gray-800">{profile?.email || '-'}</span>
+        </div>
+        {error && <div className="text-red-500">{error}</div>}
+        <div className="absolute right-0 bottom-0">
+          <button
+            type="submit"
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow transition"
+            disabled={isSaving}
+          >
+            <HiPencilSquare className="w-5 h-5" />
+            {isSaving ? '저장 중...' : '저장하기'}
+          </button>
+        </div>
       </form>
     </div>
   );

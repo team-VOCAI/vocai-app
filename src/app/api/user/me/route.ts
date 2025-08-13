@@ -27,11 +27,11 @@ export async function GET(req: NextRequest) {
     select: {
       userId: true,
       email: true,
-      name: true,
       createdAt: true,
       profile: {
         select: {
           profileId: true,
+          name: true,
           nickName: true,
           phoneNum: true,
         },
@@ -44,4 +44,45 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json(user);
+}
+
+export async function PATCH(req: NextRequest) {
+  const token = req.cookies.get('token')?.value;
+  if (!token) {
+    return NextResponse.json({ error: '토큰 필요' }, { status: 401 });
+  }
+
+  let decoded: any;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET!);
+  } catch {
+    return NextResponse.json({ error: '유효하지 않은 토큰' }, { status: 401 });
+  }
+
+  const userId = decoded.userId;
+  if (!userId) {
+    return NextResponse.json({ error: '토큰에 userId 없음' }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const { name, nickName, phone } = body; // email 제거
+
+  try {
+    await prisma.user.update({
+      where: { userId: Number(userId) },
+      data: {
+        profile: {
+          update: {
+            name: name,
+            nickName: nickName,
+            phoneNum: phone,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json({ error: '업데이트 실패' }, { status: 500 });
+  }
 }
