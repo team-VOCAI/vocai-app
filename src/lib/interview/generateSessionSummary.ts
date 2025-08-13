@@ -1,7 +1,7 @@
 import { genAI } from "@/lib/gemini";
 
 // Persona 타입 정의
-type Persona = {
+export type Persona = {
   company: string;
   job: string;
   careerLevel: string;
