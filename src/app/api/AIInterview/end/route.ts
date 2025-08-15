@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { generateSessionSummary } from "@/lib/interview/generateSessionSummary";
+import {
+  generateSessionSummary,
+  Persona,
+} from "@/lib/interview/generateSessionSummary";
 import { getProfileFromRequest } from "@/lib/getProfile";
 
 export async function POST(req: NextRequest) {
@@ -32,8 +35,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!profile.persona) {
+      return NextResponse.json(
+        { error: "페르소나가 설정되지 않았습니다." },
+        { status: 400 }
+      );
+    }
+
     const { summary, feedback } = await generateSessionSummary(
-      session.persona,
+      profile.persona as Persona,
       session.records
     );
 
