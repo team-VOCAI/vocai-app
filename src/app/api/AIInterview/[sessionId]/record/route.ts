@@ -11,6 +11,10 @@ async function transcribeAudio(file: Blob): Promise<string> {
 
   const form = new FormData();
   form.append("file", file, "audio.webm");
+  
+  const modelId =
+    process.env.ELEVENLABS_STT_MODEL_ID ?? "eleven_monolingual_v1";
+  form.append("model_id", modelId);
 
   const sttRes = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
     method: "POST",
