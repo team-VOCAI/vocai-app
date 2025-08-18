@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Recorder from "@/components/interview/Recorder";
 
@@ -32,12 +32,34 @@ export default function AIInterviewPage() {
   const [ending, setEnding] = useState(false);
   const [ended, setEnded] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const speakQuestion = (text: string) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+  const speakQuestion = async (text: string) => {
+    if (typeof window === "undefined") return;
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+        audioRef.current = new Audio(url);
+        audioRef.current.play();
+        return;
+      }
+    } catch (error) {
+      console.error("TTS error", error);
+    }
+    if ("speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   const fetchSessions = async () => {
@@ -63,7 +85,7 @@ export default function AIInterviewPage() {
         setSessionId(data.sessionId);
         setMessages([{ role: "assistant", content: data.question }]);
         setRecords([{ question: data.question }]);
-        speakQuestion(data.question);
+        await speakQuestion(data.question);
         setEnded(false);
         setSessionSummary(null);
         setSessionFeedback(null);
@@ -91,7 +113,7 @@ export default function AIInterviewPage() {
         setMessages(msgs);
         const lastMsg = msgs[msgs.length - 1];
         if (lastMsg && lastMsg.role === "assistant") {
-          speakQuestion(lastMsg.content);
+          await speakQuestion(lastMsg.content);
         }
       }
       setSessionId(id);
@@ -190,7 +212,7 @@ export default function AIInterviewPage() {
             ...prev,
             { role: "assistant", content: questionData.question },
           ]);
-          speakQuestion(questionData.question);
+          await speakQuestion(questionData.question);
         }
       }
     } finally {

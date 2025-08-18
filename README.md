@@ -36,6 +36,18 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 
+## Text-to-Speech
+
+This project can read interview questions aloud and transcribe spoken answers using the free [ElevenLabs](https://elevenlabs.io) API. To enable it, provide the following environment variables:
+
+```
+ELEVENLABS_API_KEY=your_api_key
+ELEVENLABS_VOICE_ID=optional_voice_id
+```
+
+Add these to your `.env.local` file during development or set them in your deployment environment. If they are not set, the application falls back to the browser's built-in `speechSynthesis` API and disables ElevenLabs speech-to-text transcription.
+
+
 ```
 vocai-app
 ├─ eslint.config.mjs
