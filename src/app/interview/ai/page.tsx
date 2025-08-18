@@ -33,6 +33,13 @@ export default function AIInterviewPage() {
   const [ended, setEnded] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
 
+  const speakQuestion = (text: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
+
   const fetchSessions = async () => {
     const res = await fetch("/api/AIInterview");
     if (res.ok) {
@@ -56,6 +63,7 @@ export default function AIInterviewPage() {
         setSessionId(data.sessionId);
         setMessages([{ role: "assistant", content: data.question }]);
         setRecords([{ question: data.question }]);
+        speakQuestion(data.question);
         setEnded(false);
         setSessionSummary(null);
         setSessionFeedback(null);
@@ -81,6 +89,10 @@ export default function AIInterviewPage() {
           if (r.answerText) msgs.push({ role: "user", content: r.answerText });
         });
         setMessages(msgs);
+        const lastMsg = msgs[msgs.length - 1];
+        if (lastMsg && lastMsg.role === "assistant") {
+          speakQuestion(lastMsg.content);
+        }
       }
       setSessionId(id);
       setEnded(data.ended);
@@ -178,6 +190,7 @@ export default function AIInterviewPage() {
             ...prev,
             { role: "assistant", content: questionData.question },
           ]);
+          speakQuestion(questionData.question);
         }
       }
     } finally {
