@@ -2,31 +2,36 @@
 export const runtime = "edge";
 
 import { NextRequest, NextResponse } from "next/server";
-import { genAI } from "@/lib/gemini";
 
 async function transcribeAudio(file: Blob): Promise<string> {
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const base64 = buffer.toString("base64");
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing ElevenLabs API key");
+  }
 
-  const result = await genAI.models.generateContent({
-    model: "gemini-2.5-pro",
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            inlineData: {
-              mimeType: "audio/webm",
-              data: base64,
-            },
-          },
-          { text: "위 음성을 한국어 텍스트로 전사해줘." },
-        ],
-      },
-    ],
+  const form = new FormData();
+  form.append("file", file, "audio.webm");
+  
+  const modelId =
+    process.env.ELEVENLABS_STT_MODEL_ID ?? "eleven_monolingual_v1";
+  form.append("model_id", modelId);
+
+  const sttRes = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
+    method: "POST",
+    headers: {
+      "xi-api-key": apiKey,
+    },
+    body: form,
   });
 
-  const text = result.text;
+  if (!sttRes.ok) {
+    const errorText = await sttRes.text();
+    console.error("STT request failed", errorText);
+    throw new Error("Transcription request failed");
+  }
+
+  const data = await sttRes.json();
+  const text = data.text as string | undefined;
   if (!text) throw new Error("Transcription failed");
 
   return text.trim();
