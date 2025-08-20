@@ -21,8 +21,6 @@ export async function POST(
       orderBy: { createdAt: "desc" },
     });
 
-    console.log("기록:", record);
-
     if (!record) {
       return NextResponse.json(
         { error: "답변할 질문이 없습니다." },

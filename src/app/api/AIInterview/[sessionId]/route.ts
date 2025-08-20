@@ -4,6 +4,59 @@ import { generateQuestion } from "@/lib/interview/generateQuestion";
 import { generateFeedback } from "@/lib/interview/generateFeedback";
 import { prisma } from "@/lib/prisma";
 
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ sessionId: string }> }
+) {
+  try {
+    const profile = await getProfileFromRequest(req);
+    if (!profile) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { sessionId } = await context.params;
+    const numSessionId = Number(sessionId);
+    if (isNaN(numSessionId)) {
+      return NextResponse.json(
+        { error: "올바른 sessionId가 필요합니다." },
+        { status: 400 }
+      );
+    }
+
+    const session = await prisma.mockInterviewSession.findUnique({
+      where: { sessionId: numSessionId },
+      include: { records: { orderBy: { createdAt: "asc" } } },
+    });
+
+    if (!session || session.profileId !== profile.profileId) {
+      return NextResponse.json(
+        { error: "세션이 없거나 권한이 없습니다." },
+        { status: 403 }
+      );
+    }
+
+    const records = session.records.map((r) => ({
+      question: r.question,
+      answerText: r.answerText,
+      summary: r.summary,
+      feedback: r.feedback,
+    }));
+
+    return NextResponse.json({
+      records,
+      ended: session.summary !== null,
+      summary: session.summary,
+      feedback: session.feedback,
+    });
+  } catch (error) {
+    console.error("세션 조회 오류:", error);
+    return NextResponse.json(
+      { error: "세션을 불러오지 못했습니다." },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ sessionId: string }> }
