@@ -5,11 +5,20 @@ import { useRouter } from 'next/navigation';
 import { userAPI } from '@/lib/api';
 import { HiUser, HiPencilSquare } from 'react-icons/hi2';
 
+type Persona = {
+  company: string;
+  job: string;
+  careerLevel: string;
+  difficulty: '쉬움' | '중간' | '어려움';
+  techStack: string[];
+};
+
 interface UserProfile {
   email?: string;
   name?: string;
   nickName?: string;
   phone?: string;
+  persona?: Persona;
 }
 
 export default function MyProfilePage() {
@@ -20,12 +29,13 @@ export default function MyProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await userAPI.getMe();
+        const res = await userAPI.getMe() as { data: { email: string; profile?: any } };
         setProfile({
           email: res.data.email,
           name: res.data.profile?.name ?? '',
           nickName: res.data.profile?.nickName ?? '',
           phone: res.data.profile?.phoneNum ?? '',
+          persona: res.data.profile?.persona ?? undefined,
         });
       } catch {
         setProfile(null);
@@ -68,6 +78,30 @@ export default function MyProfilePage() {
           <tr>
             <th className="text-left text-gray-500 font-medium w-32 py-2 pl-2">전화번호</th>
             <td className="py-2 pl-4 text-gray-800">{profile?.phone || '-'}</td>
+          </tr>
+          <tr>
+            <th className="text-left text-gray-500 font-medium w-32 py-2 pl-2">선호기업</th>
+            <td className="py-2 pl-4 text-gray-800">{profile?.persona?.company || '-'}</td>
+          </tr>
+          <tr>
+            <th className="text-left text-gray-500 font-medium w-32 py-2 pl-2">선호직종</th>
+            <td className="py-2 pl-4 text-gray-800">{profile?.persona?.job || '-'}</td>
+          </tr>
+          <tr>
+            <th className="text-left text-gray-500 font-medium w-32 py-2 pl-2">커리어레벨</th>
+            <td className="py-2 pl-4 text-gray-800">{profile?.persona?.careerLevel || '-'}</td>
+          </tr>
+          <tr>
+            <th className="text-left text-gray-500 font-medium w-32 py-2 pl-2">면접 난이도</th>
+            <td className="py-2 pl-4 text-gray-800">{profile?.persona?.difficulty || '-'}</td>
+          </tr>
+          <tr>
+            <th className="text-left text-gray-500 font-medium w-32 py-2 pl-2">기술스택</th>
+            <td className="py-2 pl-4 text-gray-800">
+              {profile?.persona?.techStack && profile.persona.techStack.length > 0
+                ? profile.persona.techStack.join(', ')
+                : '-'}
+            </td>
           </tr>
         </tbody>
       </table>

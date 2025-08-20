@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
           name: true,
           nickName: true,
           phoneNum: true,
+          persona: true,
         },
       },
     },
@@ -65,7 +66,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, nickName, phone } = body; // email 제거
+  const { name, nickName, phone, persona } = body;
 
   try {
     await prisma.user.update({
@@ -76,6 +77,7 @@ export async function PATCH(req: NextRequest) {
             name: name,
             nickName: nickName,
             phoneNum: phone,
+            persona: persona,
           },
         },
       },

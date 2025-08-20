@@ -249,11 +249,12 @@ export const userAPI = {
   getMe: async () => {
     return apiClient.get('/user/me');
   },
-  updateMe: async (data: { name: string; nickName: string; phone: string }) => {
+  updateMe: async (data: { name: string; nickName: string; phone: string, persona: any }) => {
     return apiClient.patch('/user/me', {
       name: data.name,
       nickName: data.nickName,
       phone: data.phone.replace(/\D/g, ''),
+      persona: data.persona,
     });
   },
 };

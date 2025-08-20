@@ -21,20 +21,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: '토큰에 userId 없음' }, { status: 401 });
   }
 
-  // 2. userId로 nickname 조회
-  const user = await prisma.user.findUnique({
+  // 2. userId로 profileId 조회
+  const profile = await prisma.profile.findUnique({
     where: { userId: Number(userId) },
-    include: { profile: true },
+    select: { profileId: true },
   });
 
-  const nickname = user?.profile?.nickName;
-  if (!nickname) {
-    return NextResponse.json({ error: '닉네임 없음' }, { status: 404 });
+  if (!profile) {
+    return NextResponse.json({ error: '프로필 없음' }, { status: 404 });
   }
 
-  // 3. nickname으로 post 조회
+  // 3. profileId로 posts 조회
   const posts = await prisma.post.findMany({
-    where: { nickName: nickname },
+    where: { profileId: profile.profileId },
     select: {
       title: true,
       createdAt: true,
