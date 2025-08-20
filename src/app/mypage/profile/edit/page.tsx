@@ -87,8 +87,8 @@ export default function EditProfilePage() {
     e.preventDefault();
     setError(null);
 
-    // 닉네임 중복 체크 통과해야 저장 가능
-    if (!nickChecked) {
+    // 닉네임이 기존과 다를 때만 중복 체크 필요
+    if (form.nickName !== profile?.nickName && !nickChecked) {
       setError('닉네임 중복 확인을 해주세요.');
       return;
     }
