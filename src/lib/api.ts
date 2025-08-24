@@ -47,6 +47,18 @@ export interface DuplicateCheckResponse {
 // 에러 관련 export (재export for convenience)
 export { ApiError } from './errors';
 
+//Post 타입 정의 (마이페이지에서 사용)
+export interface Post {
+  postId?: number;
+  boardId?: number;
+  title: string;
+  createdAt: string;
+  view?: number;
+  commentCount?: number;
+  company?: string | null;
+  jobCategory?: string | null;
+}
+
 // Axios 인스턴스 생성
 const apiClient = axios.create({
   baseURL: '/api',
@@ -257,7 +269,13 @@ export const userAPI = {
       persona: data.persona,
     });
   },
+  // 내가 쓴 게시글 목록 조회
+  getMyPosts: async (): Promise<{ data: { posts: Post[] } }> => {
+    return apiClient.get('/user/posts');
+  },
 };
+
+
 
 // 기본 API 클라이언트도 export (커스텀 요청용)
 export default apiClient;

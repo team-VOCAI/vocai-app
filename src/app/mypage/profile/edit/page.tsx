@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { userAPI } from '@/lib/api';
 import { authAPI } from '@/lib/api';
 import { HiUser, HiPencilSquare } from 'react-icons/hi2';
+import { companies, jobCategories } from '@/lib/constants/boards';
 
 type Persona = {
-  company: string;
-  job: string;
+  company: string[];
+  job: string[];
   careerLevel: string;
   difficulty: '쉬움' | '중간' | '어려움';
   techStack: string[];
@@ -40,8 +41,8 @@ export default function EditProfilePage() {
     nickName: '',
     phone: '',
     persona: {
-      company: '',
-      job: '',
+      company: [] as string[],
+      job: [] as string[],
       careerLevel: '',
       difficulty: '쉬움' as '쉬움' | '중간' | '어려움',
       techStack: [] as string[],
@@ -55,6 +56,10 @@ export default function EditProfilePage() {
   const [nickChecked, setNickChecked] = useState(false);
   const [nickCheckMsg, setNickCheckMsg] = useState('');
 
+  // 추가: 선호기업/직종 입력 상태
+  const [companyInput, setCompanyInput] = useState('');
+  const [jobInput, setJobInput] = useState('');
+
   const router = useRouter();
 
   useEffect(() => {
@@ -67,8 +72,8 @@ export default function EditProfilePage() {
           nickName: res.data.profile?.nickName ?? '',
           phone: res.data.profile?.phoneNum ?? '',
           persona: res.data.profile?.persona ?? {
-            company: '',
-            job: '',
+            company: [],
+            job: [],
             careerLevel: '',
             difficulty: '쉬움',
             techStack: [],
@@ -79,8 +84,8 @@ export default function EditProfilePage() {
           nickName: res.data.profile?.nickName ?? '',
           phone: res.data.profile?.phoneNum ?? '',
           persona: {
-            company: res.data.profile?.persona?.company ?? '',
-            job: res.data.profile?.persona?.job ?? '',
+            company: res.data.profile?.persona?.company ?? [],
+            job: res.data.profile?.persona?.job ?? [],
             careerLevel: res.data.profile?.persona?.careerLevel ?? '',
             difficulty: res.data.profile?.persona?.difficulty ?? '쉬움',
             techStack: res.data.profile?.persona?.techStack ?? [],
@@ -96,8 +101,18 @@ export default function EditProfilePage() {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (name.startsWith('persona.')) {
+    const { name, value, type, selectedOptions } = e.target as HTMLInputElement & HTMLSelectElement;
+    if (name === 'persona.company' || name === 'persona.job') {
+      // 다중 선택 처리
+      const selected = Array.from(selectedOptions).map(option => option.value);
+      setForm(prev => ({
+        ...prev,
+        persona: {
+          ...prev.persona,
+          [name.split('.')[1]]: selected,
+        },
+      }));
+    } else if (name.startsWith('persona.')) {
       const key = name.replace('persona.', '') as keyof Persona;
       setForm(prev => ({
         ...prev,
@@ -159,6 +174,58 @@ export default function EditProfilePage() {
       setNickChecked(false);
       setNickCheckMsg('닉네임 중복 체크 실패');
     }
+  };
+
+  // 선호기업 추가
+  const handleCompanyAdd = () => {
+    const company = companyInput.trim();
+    if (company && !form.persona.company.includes(company)) {
+      setForm(prev => ({
+        ...prev,
+        persona: {
+          ...prev.persona,
+          company: [...prev.persona.company, company],
+        },
+      }));
+      setCompanyInput('');
+    }
+  };
+
+  // 선호기업 삭제
+  const handleCompanyRemove = (company: string) => {
+    setForm(prev => ({
+      ...prev,
+      persona: {
+        ...prev.persona,
+        company: prev.persona.company.filter(c => c !== company),
+      },
+    }));
+  };
+
+  // 선호직종 추가
+  const handleJobAdd = () => {
+    const job = jobInput.trim();
+    if (job && !form.persona.job.includes(job)) {
+      setForm(prev => ({
+        ...prev,
+        persona: {
+          ...prev.persona,
+          job: [...prev.persona.job, job],
+        },
+      }));
+      setJobInput('');
+    }
+  };
+
+  // 선호직종 삭제
+  const handleJobRemove = (job: string) => {
+    setForm(prev => ({
+      ...prev,
+      persona: {
+        ...prev.persona,
+        job: prev.persona.job.filter(j => j !== job),
+      },
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -253,28 +320,99 @@ export default function EditProfilePage() {
           <label className="w-24 text-gray-700">이메일</label>
           <span className="text-gray-800">{profile?.email || '-'}</span>
         </div>
-        {/* persona 입력 폼 */}
-        <div className="flex items-center gap-4 mb-4">
-          <label className="w-24 text-gray-700">선호기업</label>
-          <input
-            type="text"
-            name="persona.company"
-            value={form.persona.company}
-            onChange={handleChange}
-            className="flex-1 border rounded px-3 py-2"
-            placeholder="예: 네이버"
-          />
+        {/* 선호기업 추가/삭제 */}
+        <div className="flex items-start gap-4 mb-4">
+          <label className="w-24 text-gray-700 pt-2">선호기업</label>
+          <div className="flex-1">
+            <div className="flex gap-2 mb-2">
+              <select
+                value={companyInput}
+                onChange={e => setCompanyInput(e.target.value)}
+                className="border rounded px-3 py-2 flex-1"
+              >
+                <option value="">기업 선택</option>
+                {companies
+                  .filter(c => !form.persona.company.includes(c))
+                  .map(company => (
+                    <option key={company} value={company}>
+                      {company}
+                    </option>
+                  ))}
+              </select>
+              <button
+                type="button"
+                className="px-3 py-2 bg-gray-200 rounded text-gray-700 font-semibold"
+                onClick={handleCompanyAdd}
+                disabled={!companyInput}
+              >
+                추가
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {form.persona.company.map(company => (
+                <span
+                  key={company}
+                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full flex items-center gap-1"
+                >
+                  {company}
+                  <button
+                    type="button"
+                    className="ml-1 text-xs text-red-500"
+                    onClick={() => handleCompanyRemove(company)}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-4 mb-4">
-          <label className="w-24 text-gray-700">선호직종</label>
-          <input
-            type="text"
-            name="persona.job"
-            value={form.persona.job}
-            onChange={handleChange}
-            className="flex-1 border rounded px-3 py-2"
-            placeholder="예: 프론트엔드 개발자"
-          />
+        {/* 선호직종 추가/삭제 */}
+        <div className="flex items-start gap-4 mb-4">
+          <label className="w-24 text-gray-700 pt-2">선호직종</label>
+          <div className="flex-1">
+            <div className="flex gap-2 mb-2">
+              <select
+                value={jobInput}
+                onChange={e => setJobInput(e.target.value)}
+                className="border rounded px-3 py-2 flex-1"
+              >
+                <option value="">직종 선택</option>
+                {jobCategories
+                  .filter(j => !form.persona.job.includes(j.value))
+                  .map(job => (
+                    <option key={job.value} value={job.value}>
+                      {job.value}
+                    </option>
+                  ))}
+              </select>
+              <button
+                type="button"
+                className="px-3 py-2 bg-gray-200 rounded text-gray-700 font-semibold"
+                onClick={handleJobAdd}
+                disabled={!jobInput}
+              >
+                추가
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {form.persona.job.map(job => (
+                <span
+                  key={job}
+                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full flex items-center gap-1"
+                >
+                  {job}
+                  <button
+                    type="button"
+                    className="ml-1 text-xs text-red-500"
+                    onClick={() => handleJobRemove(job)}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-4 mb-4">
           <label className="w-24 text-gray-700">커리어레벨</label>

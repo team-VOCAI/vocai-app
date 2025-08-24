@@ -81,11 +81,23 @@ export default function MyProfilePage() {
           </tr>
           <tr>
             <th className="text-left text-gray-500 font-medium w-32 py-2 pl-2">선호기업</th>
-            <td className="py-2 pl-4 text-gray-800">{profile?.persona?.company || '-'}</td>
+            <td className="py-2 pl-4 text-gray-800">
+              {Array.isArray(profile?.persona?.company)
+                ? profile.persona.company.length > 0
+                  ? profile.persona.company.join(', ')
+                  : '-'
+                : profile?.persona?.company || '-'}
+            </td>
           </tr>
           <tr>
             <th className="text-left text-gray-500 font-medium w-32 py-2 pl-2">선호직종</th>
-            <td className="py-2 pl-4 text-gray-800">{profile?.persona?.job || '-'}</td>
+            <td className="py-2 pl-4 text-gray-800">
+              {Array.isArray(profile?.persona?.job)
+                ? profile.persona.job.length > 0
+                  ? profile.persona.job.join(', ')
+                  : '-'
+                : profile?.persona?.job || '-'}
+            </td>
           </tr>
           <tr>
             <th className="text-left text-gray-500 font-medium w-32 py-2 pl-2">커리어레벨</th>

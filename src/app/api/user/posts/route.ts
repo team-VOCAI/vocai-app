@@ -31,14 +31,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: '프로필 없음' }, { status: 404 });
   }
 
-  // 3. profileId로 posts 조회
+  // 3. profileId로 posts의 모든 정보 조회
   const posts = await prisma.post.findMany({
     where: { profileId: profile.profileId },
-    select: {
-      title: true,
-      createdAt: true,
-    },
     orderBy: { createdAt: 'desc' },
+    // select를 제거하면 모든 컬럼이 반환됩니다
   });
 
   return NextResponse.json({ posts });
