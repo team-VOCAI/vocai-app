@@ -77,8 +77,9 @@ export default function AIInterviewPage() {
   };
 
   const handleRename = async (s: Session) => {
-    const newTitle = prompt("새 제목", s.title ?? "");
-    if (!newTitle) return;
+    const input = prompt("새 제목 (최대 30자)", s.title ?? "");
+    if (!input) return;
+    const newTitle = input.slice(0, 30);
     const res = await fetch(`/api/AIInterview/${s.sessionId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -276,42 +277,48 @@ export default function AIInterviewPage() {
               <p className="text-sm text-gray-500">면접 기록이 없습니다.</p>
             ) : (
               <ul className="space-y-2">
-                {sessions.map((s) => (
-                  <li key={s.sessionId} className="flex items-center">
-                    <button
-                      onClick={() => loadSession(s.sessionId)}
-                      className={`flex-1 text-left text-sm truncate px-2 py-1 rounded hover:bg-gray-100 ${
-                        s.sessionId === sessionId ? "bg-gray-200" : "text-gray-700"
-                      }`}
-                    >
-                      {s.title ?? `세션 ${s.sessionId}`}
-                    </button>
-                    <div className="relative">
+                {sessions.map((s) => {
+                  const fullTitle = s.title ?? `세션 ${s.sessionId}`;
+                  const displayTitle =
+                    fullTitle.length > 30 ? `${fullTitle.slice(0, 30)}…` : fullTitle;
+                  return (
+                    <li key={s.sessionId} className="flex items-center">
                       <button
-                        onClick={() => handleMenuToggle(s.sessionId)}
-                        className="px-2 text-gray-500"
+                        onClick={() => loadSession(s.sessionId)}
+                        title={fullTitle}
+                        className={`flex-1 text-left text-sm truncate px-2 py-1 rounded hover:bg-gray-100 ${
+                          s.sessionId === sessionId ? "bg-gray-200" : "text-gray-700"
+                        }`}
                       >
-                        ...
+                        {displayTitle}
                       </button>
-                      {menuOpen === s.sessionId && (
-                        <div className="absolute right-0 mt-1 bg-white border rounded shadow z-10">
-                          <button
-                            onClick={() => handleRename(s)}
-                            className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                          >
-                            제목 수정
-                          </button>
-                          <button
-                            onClick={() => handleDelete(s.sessionId)}
-                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
+                      <div className="relative">
+                        <button
+                          onClick={() => handleMenuToggle(s.sessionId)}
+                          className="px-2 text-gray-500"
+                        >
+                          ...
+                        </button>
+                        {menuOpen === s.sessionId && (
+                          <div className="absolute right-0 mt-1 bg-white border rounded shadow z-10 whitespace-nowrap">
+                            <button
+                              onClick={() => handleRename(s)}
+                              className="block text-left px-4 py-2 text-sm hover:bg-gray-100"
+                            >
+                              제목 수정
+                            </button>
+                            <button
+                              onClick={() => handleDelete(s.sessionId)}
+                              className="block text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
