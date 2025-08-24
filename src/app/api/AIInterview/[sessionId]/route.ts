@@ -28,7 +28,7 @@ export async function GET(
       include: { records: { orderBy: { createdAt: "asc" } } },
     });
 
-    if (!session || session.profileId !== profile.profileId) {
+    if (!session || session.profileId !== profile.profileId || session.deletedAt) {
       return NextResponse.json(
         { error: "세션이 없거나 권한이 없습니다." },
         { status: 403 }
@@ -86,7 +86,7 @@ export async function POST(
       where: { sessionId: numSessionId },
     });
 
-    if (!session || session.profileId !== profile.profileId) {
+    if (!session || session.profileId !== profile.profileId || session.deletedAt) {
       return NextResponse.json(
         { error: "세션이 없거나 권한이 없습니다." },
         { status: 403 }
@@ -132,5 +132,90 @@ export async function POST(
       { error: "Unknown error occurred" },
       { status: 500 }
     );
+  }
+}
+
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ sessionId: string }> }
+) {
+  try {
+    const profile = await getProfileFromRequest(req);
+    if (!profile) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { sessionId } = await context.params;
+    const numSessionId = Number(sessionId);
+    if (isNaN(numSessionId)) {
+      return NextResponse.json(
+        { error: "올바른 sessionId가 필요합니다." },
+        { status: 400 }
+      );
+    }
+
+    const session = await prisma.mockInterviewSession.findUnique({
+      where: { sessionId: numSessionId },
+    });
+
+    if (!session || session.profileId !== profile.profileId || session.deletedAt) {
+      return NextResponse.json(
+        { error: "세션이 없거나 권한이 없습니다." },
+        { status: 403 }
+      );
+    }
+
+    const { title } = await req.json();
+    await prisma.mockInterviewSession.update({
+      where: { sessionId: numSessionId },
+      data: { title },
+    });
+
+    return NextResponse.json({ title });
+  } catch (error) {
+    console.error("세션 제목 수정 오류:", error);
+    return NextResponse.json({ error: "세션 제목을 수정하지 못했습니다." }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ sessionId: string }> }
+) {
+  try {
+    const profile = await getProfileFromRequest(req);
+    if (!profile) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { sessionId } = await context.params;
+    const numSessionId = Number(sessionId);
+    if (isNaN(numSessionId)) {
+      return NextResponse.json(
+        { error: "올바른 sessionId가 필요합니다." },
+        { status: 400 }
+      );
+    }
+
+    const session = await prisma.mockInterviewSession.findUnique({
+      where: { sessionId: numSessionId },
+    });
+
+    if (!session || session.profileId !== profile.profileId || session.deletedAt) {
+      return NextResponse.json(
+        { error: "세션이 없거나 권한이 없습니다." },
+        { status: 403 }
+      );
+    }
+
+    await prisma.mockInterviewSession.update({
+      where: { sessionId: numSessionId },
+      data: { deletedAt: new Date() },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("세션 삭제 오류:", error);
+    return NextResponse.json({ error: "세션을 삭제하지 못했습니다." }, { status: 500 });
   }
 }

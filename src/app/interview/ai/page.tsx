@@ -12,6 +12,7 @@ interface Message {
 interface Session {
   sessionId: number;
   createdAt: string;
+  title: string | null;
 }
 
 interface RecordItem {
@@ -32,6 +33,7 @@ export default function AIInterviewPage() {
   const [ending, setEnding] = useState(false);
   const [ended, setEnded] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [menuOpen, setMenuOpen] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const speakQuestion = async (text: string) => {
@@ -68,6 +70,41 @@ export default function AIInterviewPage() {
       const data = await res.json();
       setSessions(data);
     }
+  };
+
+  const handleMenuToggle = (id: number) => {
+    setMenuOpen((prev) => (prev === id ? null : id));
+  };
+
+  const handleRename = async (s: Session) => {
+    const newTitle = prompt("새 제목", s.title ?? "");
+    if (!newTitle) return;
+    const res = await fetch(`/api/AIInterview/${s.sessionId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: newTitle }),
+    });
+    if (res.ok) {
+      fetchSessions();
+    }
+    setMenuOpen(null);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("세션을 삭제하시겠습니까?")) return;
+    const res = await fetch(`/api/AIInterview/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      if (sessionId === id) {
+        setSessionId(null);
+        setMessages([]);
+        setRecords([]);
+        setEnded(false);
+        setSessionSummary(null);
+        setSessionFeedback(null);
+      }
+      fetchSessions();
+    }
+    setMenuOpen(null);
   };
 
   useEffect(() => {
@@ -240,15 +277,39 @@ export default function AIInterviewPage() {
             ) : (
               <ul className="space-y-2">
                 {sessions.map((s) => (
-                  <li key={s.sessionId}>
+                  <li key={s.sessionId} className="flex items-center">
                     <button
                       onClick={() => loadSession(s.sessionId)}
-                      className={`w-full text-left text-sm truncate px-2 py-1 rounded hover:bg-gray-100 ${
+                      className={`flex-1 text-left text-sm truncate px-2 py-1 rounded hover:bg-gray-100 ${
                         s.sessionId === sessionId ? "bg-gray-200" : "text-gray-700"
                       }`}
                     >
-                      세션 {s.sessionId}
+                      {s.title ?? `세션 ${s.sessionId}`}
                     </button>
+                    <div className="relative">
+                      <button
+                        onClick={() => handleMenuToggle(s.sessionId)}
+                        className="px-2 text-gray-500"
+                      >
+                        ...
+                      </button>
+                      {menuOpen === s.sessionId && (
+                        <div className="absolute right-0 mt-1 bg-white border rounded shadow z-10">
+                          <button
+                            onClick={() => handleRename(s)}
+                            className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                          >
+                            제목 수정
+                          </button>
+                          <button
+                            onClick={() => handleDelete(s.sessionId)}
+                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>

@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       include: { records: true },
     });
 
-    if (!session || session.profileId !== profile.profileId) {
+    if (!session || session.profileId !== profile.profileId || session.deletedAt) {
       return NextResponse.json(
         { error: "세션이 없거나 권한이 없습니다." },
         { status: 403 }
