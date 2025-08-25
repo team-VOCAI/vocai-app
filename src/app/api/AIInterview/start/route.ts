@@ -24,6 +24,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // 기본 세션 제목 설정 (예: "세션1")
+    await prisma.mockInterviewSession.update({
+      where: { sessionId: session.sessionId },
+      data: { title: `세션${session.sessionId}` },
+    });
+
     const question = await generateQuestion(session.sessionId);
 
     // 첫 질문 저장 (answerText는 null)

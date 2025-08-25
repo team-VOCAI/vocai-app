@@ -10,8 +10,8 @@ export async function GET(req: NextRequest) {
     }
 
     const sessions = await prisma.mockInterviewSession.findMany({
-      where: { profileId: profile.profileId },
-      select: { sessionId: true, createdAt: true },
+      where: { profileId: profile.profileId, deletedAt: null },
+      select: { sessionId: true, createdAt: true, title: true },
       orderBy: { createdAt: "desc" },
     });
 
