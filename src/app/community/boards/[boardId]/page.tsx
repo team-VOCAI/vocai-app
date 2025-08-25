@@ -7,55 +7,23 @@ import {
   HiChevronLeft,
   HiChevronRight,
   HiDocumentText,
-  HiPaperClip,
 } from 'react-icons/hi2';
 import Navbar from '@/components/Navbar';
-import { CommunitySidebar } from '@/features/community/components';
+import {
+  CommunitySidebar,
+  RegularBoard,
+  StudyBoard,
+} from '@/features/community/components';
 import { boardAPI } from '@/lib/api';
-import { formatDate } from '@/lib/utils';
 import { getCategoryInfo, boardInfo } from '@/lib/constants/boards';
 import { useAuth } from '@/hooks/useAuth';
 import CommonModal from '@/components/CommonModal';
 import { HiLockClosed } from 'react-icons/hi2';
 import { setCurrentPageAsRedirect } from '@/lib/redirect';
+import { Post, PostsResponse } from '@/types/post';
 
 interface BoardPageProps {
   params: Promise<{ boardId: string }>;
-}
-
-// 게시글 타입 정의
-interface Post {
-  postId: number;
-  title: string;
-  content: string;
-  nickName: string;
-  createdAt: string;
-  updatedAt: string;
-  view: number;
-  commentCount: number; // 댓글 수 추가
-  company?: string | null;
-  jobCategory?: string | null;
-  tags?: string | null;
-  profile: {
-    profileId: number;
-    nickName: string;
-  };
-  board: {
-    boardId: number;
-    name: string;
-  };
-  attachments: Array<{
-    attachmentId: number;
-    fileName: string;
-    fileSize: number;
-    fileType: string;
-    createdAt: string;
-  }>;
-}
-
-// API 응답 타입 정의
-interface PostsResponse {
-  posts: Post[];
 }
 
 export default function BoardPage({ params }: BoardPageProps) {
@@ -273,7 +241,7 @@ export default function BoardPage({ params }: BoardPageProps) {
                         className='inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors duration-200'
                       >
                         <HiPlus className='w-4 h-4' />
-                        글쓰기
+                        {boardId === '7' ? '스터디 등록' : '글쓰기'}
                       </Link>
                     )}
                   </div>
@@ -324,16 +292,18 @@ export default function BoardPage({ params }: BoardPageProps) {
               {/* 게시글 목록 */}
               <div className='bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden'>
                 {/* 테이블 헤더 */}
-                <div className='bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200'>
-                  <div className='grid grid-cols-12 gap-4 p-4 text-sm font-semibold text-gray-700'>
-                    <div className='col-span-1 text-center'>번호</div>
-                    <div className='col-span-5 text-center'>제목</div>
-                    <div className='col-span-2 text-center'>작성자</div>
-                    <div className='col-span-2 text-center'>작성일</div>
-                    <div className='col-span-1 text-center'>조회</div>
-                    <div className='col-span-1 text-center'>추천</div>
+                {boardId !== '7' && (
+                  <div className='bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200'>
+                    <div className='grid grid-cols-12 gap-4 p-4 text-sm font-semibold text-gray-700'>
+                      <div className='col-span-1 text-center'>번호</div>
+                      <div className='col-span-5 text-center'>제목</div>
+                      <div className='col-span-2 text-center'>작성자</div>
+                      <div className='col-span-2 text-center'>작성일</div>
+                      <div className='col-span-1 text-center'>조회</div>
+                      <div className='col-span-1 text-center'>추천</div>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* 로딩 상태 */}
                 {loading && (
@@ -368,62 +338,22 @@ export default function BoardPage({ params }: BoardPageProps) {
                 {!loading && !error && (
                   <>
                     {currentPosts.length > 0 ? (
-                      <div className='divide-y divide-gray-200'>
-                        {currentPosts.map((post, index) => (
-                          <div
-                            key={post.postId}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handlePostClick(post.postId);
-                            }}
-                            className='text-gray-900 hover:text-blue-600 transition-colors font-medium cursor-pointer hover:bg-gray-50 rounded-lg'
-                          >
-                            <div className='grid grid-cols-12 gap-4 p-4 hover:bg-gray-50 transition-colors'>
-                              <div className='col-span-1 text-center text-sm text-gray-600'>
-                                {(currentPage - 1) * postsPerPage + index + 1}
-                              </div>
-                              <div className='col-span-5'>
-                                <div className='flex items-center gap-2'>
-                                  {/* 취업 정보 카테고리인 경우 메타정보 표시 */}
-                                  {['1', '2', '3', '4'].includes(boardId) &&
-                                    (post.company || post.jobCategory) && (
-                                      <span className='text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded'>
-                                        {post.company && post.jobCategory
-                                          ? `${post.company} · ${post.jobCategory}`
-                                          : post.company || post.jobCategory}
-                                      </span>
-                                    )}
-                                  {post.title}
-
-                                  {/* 첨부파일 아이콘 표시 */}
-                                  {post.attachments.length > 0 && (
-                                    <HiPaperClip className='w-4 h-4 text-gray-500' />
-                                  )}
-                                  {/* 댓글 수 표시 [댓글수] 형식 */}
-                                  {post.commentCount > 0 && (
-                                    <span className='text-gray-500 text-sm'>
-                                      [{post.commentCount}]
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className='col-span-2 text-center text-sm text-gray-600'>
-                                {post.nickName}
-                              </div>
-                              <div className='col-span-2 text-center text-sm text-gray-600'>
-                                {formatDate(post.createdAt)}
-                              </div>
-                              <div className='col-span-1 text-center text-sm text-gray-600'>
-                                {post.view}
-                              </div>
-                              <div className='col-span-1 text-center text-sm text-gray-600'>
-                                {/* 추천 수 표시 (추후 구현) */}0
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      boardId !== '7' ? (
+                        // 일반 게시판
+                        <RegularBoard
+                          posts={currentPosts}
+                          onPostClick={handlePostClick}
+                          boardId={boardId}
+                          currentPage={currentPage}
+                          postsPerPage={postsPerPage}
+                        />
+                      ) : (
+                        // 스터디 게시판 (카드 형태)
+                        <StudyBoard
+                          posts={currentPosts}
+                          onPostClick={handlePostClick}
+                        />
+                      )
                     ) : (
                       <div className='text-center py-16'>
                         <div className='w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6'>
@@ -451,10 +381,14 @@ export default function BoardPage({ params }: BoardPageProps) {
                         ) : (
                           <>
                             <h3 className='text-xl font-semibold text-gray-900 mb-3'>
-                              아직 게시글이 없습니다
+                              {boardId === '7'
+                                ? '아직 스터디가 없습니다'
+                                : '아직 게시글이 없습니다'}
                             </h3>
                             <p className='text-gray-600 mb-8'>
-                              첫 번째 게시글을 작성해보세요!
+                              {boardId === '7'
+                                ? '첫 번째 스터디를 등록해보세요!'
+                                : '첫 번째 게시글을 작성해보세요!'}
                             </p>
                           </>
                         )}
@@ -464,7 +398,7 @@ export default function BoardPage({ params }: BoardPageProps) {
                           className='inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors'
                         >
                           <HiPlus className='w-4 h-4' />
-                          글쓰기
+                          {boardId === '7' ? '스터디 등록' : '글쓰기'}
                         </button>
                       </div>
                     )}
