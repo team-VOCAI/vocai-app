@@ -3,9 +3,9 @@ import { genAI } from "@/lib/gemini";
 import { prisma } from "@/lib/prisma";
 
 export async function generateQuestion(sessionId: number): Promise<string> {
-  // 1. 이전 질문/답변 기록
+  // 1. 이전 질문/답변 기록 (답변이 완료된 것만)
   const records = await prisma.mockInterviewRecord.findMany({
-    where: { sessionId },
+    where: { sessionId, answerText: { not: null } },
     orderBy: { createdAt: "asc" },
   });
 
