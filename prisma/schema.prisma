@@ -135,6 +135,7 @@ model Attachment {
 model MockInterviewSession {
   sessionId  Int                    @id @default(autoincrement())
   profileId  Int
+  title      String?
   records    MockInterviewRecord[]
   summary      String?
   feedback     String?
