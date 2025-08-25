@@ -11,11 +11,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { persona } = await req.json();
-
-    if (!persona) {
+    if (!profile.persona) {
       return NextResponse.json(
-        { error: "persona는 필수입니다." },
+        { error: "페르소나가 설정되지 않았습니다." },
         { status: 400 }
       );
     }
@@ -23,8 +21,13 @@ export async function POST(req: NextRequest) {
     const session = await prisma.mockInterviewSession.create({
       data: {
         profileId: profile.profileId,
-        persona,
       },
+    });
+
+    // 기본 세션 제목 설정 (예: "세션1")
+    await prisma.mockInterviewSession.update({
+      where: { sessionId: session.sessionId },
+      data: { title: `세션${session.sessionId}` },
     });
 
     const question = await generateQuestion(session.sessionId);

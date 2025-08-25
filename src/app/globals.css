@@ -67,6 +67,12 @@ body {
   font-family: inherit;
 }
 
+/* Show a pointer cursor when hovering links or buttons */
+a,
+button {
+  cursor: pointer;
+}
+
 /* Form Elements Base Styles */
 input[type='text'],
 input[type='email'],

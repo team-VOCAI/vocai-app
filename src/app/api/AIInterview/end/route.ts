@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { generateSessionSummary } from "@/lib/interview/generateSessionSummary";
+import {
+  generateSessionSummary,
+  Persona,
+} from "@/lib/interview/generateSessionSummary";
 import { getProfileFromRequest } from "@/lib/getProfile";
 
 export async function POST(req: NextRequest) {
@@ -25,15 +28,22 @@ export async function POST(req: NextRequest) {
       include: { records: true },
     });
 
-    if (!session || session.profileId !== profile.profileId) {
+    if (!session || session.profileId !== profile.profileId || session.deletedAt) {
       return NextResponse.json(
         { error: "세션이 없거나 권한이 없습니다." },
         { status: 403 }
       );
     }
 
+    if (!profile.persona) {
+      return NextResponse.json(
+        { error: "페르소나가 설정되지 않았습니다." },
+        { status: 400 }
+      );
+    }
+
     const { summary, feedback } = await generateSessionSummary(
-      session.persona,
+      profile.persona as Persona,
       session.records
     );
 
