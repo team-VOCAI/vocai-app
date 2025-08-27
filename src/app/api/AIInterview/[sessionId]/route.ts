@@ -42,8 +42,17 @@ export async function GET(
       feedback: r.feedback,
     }));
 
+    // 진행 중인 세션에서는 최초 미답변 질문까지만 반환
+    let filtered = records;
+    if (session.summary === null) {
+      const firstUnanswered = records.findIndex((r) => !r.answerText);
+      if (firstUnanswered !== -1) {
+        filtered = records.slice(0, firstUnanswered + 1);
+      }
+    }
+
     return NextResponse.json({
-      records,
+      records: filtered,
       ended: session.summary !== null,
       summary: session.summary,
       feedback: session.feedback,

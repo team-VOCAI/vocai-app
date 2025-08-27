@@ -15,10 +15,10 @@ export async function POST(
       return NextResponse.json({ error: "입력값 오류" }, { status: 400 });
     }
 
-    // 가장 최근 unanswered 질문 찾기
+    // 가장 먼저 생성된 unanswered 질문 찾기
     const record = await prisma.mockInterviewRecord.findFirst({
       where: { sessionId: numSessionId, answerText: null },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
     });
 
     if (!record) {

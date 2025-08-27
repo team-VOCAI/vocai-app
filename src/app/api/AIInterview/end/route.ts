@@ -42,9 +42,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const answered = session.records.filter((r) => r.answerText);
     const { summary, feedback } = await generateSessionSummary(
       profile.persona as Persona,
-      session.records
+      answered
     );
 
     await prisma.mockInterviewSession.update({
