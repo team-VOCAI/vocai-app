@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getProfileFromRequest } from "@/lib/getProfile";
+import { generateSecondQuestion } from "@/lib/interview/generateSecondQuestion";
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,6 +38,18 @@ export async function POST(req: NextRequest) {
       data: {
         sessionId: session.sessionId,
         question,
+      },
+    });
+
+    // 두 번째 질문을 미리 생성하여 저장
+    const secondQuestion = await generateSecondQuestion(session.sessionId);
+    await prisma.mockInterviewRecord.create({
+      data: {
+        sessionId: session.sessionId,
+        question: secondQuestion,
+        answerText: null,
+        summary: null,
+        feedback: null,
       },
     });
 
