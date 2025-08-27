@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Recorder from "@/components/interview/Recorder";
 
@@ -35,6 +36,8 @@ export default function AIInterviewPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [menuOpen, setMenuOpen] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const searchParams = useSearchParams();
+  const initialSessionId = searchParams.get("sessionId");
 
   const speakQuestion = async (text: string) => {
     if (typeof window === "undefined") return;
@@ -160,6 +163,15 @@ export default function AIInterviewPage() {
       setSessionFeedback(data.feedback ?? null);
     }
   };
+
+  useEffect(() => {
+    if (initialSessionId) {
+      const id = Number(initialSessionId);
+      if (!isNaN(id)) {
+        loadSession(id);
+      }
+    }
+  }, [initialSessionId]);
 
   const endSession = async () => {
     if (!sessionId) return;

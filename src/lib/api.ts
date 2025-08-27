@@ -59,6 +59,13 @@ export interface Post {
   jobCategory?: string | null;
 }
 
+// Mock Interview Session 타입 정의
+export interface InterviewSession {
+  sessionId: number;
+  title: string | null;
+  createdAt: string;
+}
+
 // Axios 인스턴스 생성
 const apiClient = axios.create({
   baseURL: '/api',
@@ -272,6 +279,10 @@ export const userAPI = {
   // 내가 쓴 게시글 목록 조회
   getMyPosts: async (): Promise<{ data: { posts: Post[] } }> => {
     return apiClient.get('/user/posts');
+  },
+  // 내 면접 세션 목록 조회
+  getMyInterviews: async (): Promise<{ data: { sessions: InterviewSession[] } }> => {
+    return apiClient.get('/user/myInterview');
   },
 };
 
