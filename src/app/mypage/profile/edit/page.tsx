@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { userAPI } from '@/lib/api';
 import { authAPI } from '@/lib/api';
 import { HiUser, HiPencilSquare } from 'react-icons/hi2';
-import { companies, jobCategories } from '@/lib/constants/boards';
+import { companies } from '@/lib/constants/boards';
+import { TECH_STACKS, JOB_ROLES } from '@/lib/constants/persona';
 
 type Persona = {
   company: string[];
@@ -101,18 +102,8 @@ export default function EditProfilePage() {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type, selectedOptions } = e.target as HTMLInputElement & HTMLSelectElement;
-    if (name === 'persona.company' || name === 'persona.job') {
-      // 다중 선택 처리
-      const selected = Array.from(selectedOptions).map(option => option.value);
-      setForm(prev => ({
-        ...prev,
-        persona: {
-          ...prev.persona,
-          [name.split('.')[1]]: selected,
-        },
-      }));
-    } else if (name.startsWith('persona.')) {
+    const { name, value } = e.target;
+    if (name.startsWith('persona.')) {
       const key = name.replace('persona.', '') as keyof Persona;
       setForm(prev => ({
         ...prev,
@@ -123,8 +114,6 @@ export default function EditProfilePage() {
       }));
     } else {
       setForm(prev => ({ ...prev, [name]: value }));
-
-      // 닉네임 값이 바뀌면 중복 체크 초기화
       if (name === 'nickName') {
         setNickChecked(false);
         setNickCheckMsg('');
@@ -135,7 +124,7 @@ export default function EditProfilePage() {
   // 기술스택 추가
   const handleTechAdd = () => {
     const tech = techInput.trim();
-    if (tech && !form.persona.techStack.includes(tech)) {
+    if (tech && TECH_STACKS.includes(tech) && !form.persona.techStack.includes(tech)) {
       setForm(prev => ({
         ...prev,
         persona: {
@@ -143,8 +132,10 @@ export default function EditProfilePage() {
           techStack: [...prev.persona.techStack, tech],
         },
       }));
-      setTechInput('');
+    } else if (tech && !TECH_STACKS.includes(tech)) {
+      alert('등록된 기술 스택만 선택할 수 있습니다.');
     }
+    setTechInput('');
   };
 
   // 기술스택 삭제
@@ -179,7 +170,8 @@ export default function EditProfilePage() {
   // 선호기업 추가
   const handleCompanyAdd = () => {
     const company = companyInput.trim();
-    if (company && !form.persona.company.includes(company)) {
+    const valid = /^[A-Za-z0-9가-힣\s]+$/.test(company);
+    if (company && valid && !form.persona.company.includes(company)) {
       setForm(prev => ({
         ...prev,
         persona: {
@@ -187,8 +179,10 @@ export default function EditProfilePage() {
           company: [...prev.persona.company, company],
         },
       }));
-      setCompanyInput('');
+    } else if (company && !valid) {
+      alert('회사명에는 특수문자를 사용할 수 없습니다.');
     }
+    setCompanyInput('');
   };
 
   // 선호기업 삭제
@@ -205,7 +199,7 @@ export default function EditProfilePage() {
   // 선호직종 추가
   const handleJobAdd = () => {
     const job = jobInput.trim();
-    if (job && !form.persona.job.includes(job)) {
+    if (job && JOB_ROLES.includes(job) && !form.persona.job.includes(job)) {
       setForm(prev => ({
         ...prev,
         persona: {
@@ -213,8 +207,8 @@ export default function EditProfilePage() {
           job: [...prev.persona.job, job],
         },
       }));
-      setJobInput('');
     }
+    setJobInput('');
   };
 
   // 선호직종 삭제
@@ -325,25 +319,24 @@ export default function EditProfilePage() {
           <label className="w-24 text-gray-700 pt-2">선호기업</label>
           <div className="flex-1">
             <div className="flex gap-2 mb-2">
-              <select
+              <input
+                type="text"
                 value={companyInput}
                 onChange={e => setCompanyInput(e.target.value)}
                 className="border rounded px-3 py-2 flex-1"
-              >
-                <option value="">기업 선택</option>
-                {companies
-                  .filter(c => !form.persona.company.includes(c))
-                  .map(company => (
-                    <option key={company} value={company}>
-                      {company}
-                    </option>
-                  ))}
-              </select>
+                placeholder="기업 입력"
+                list="company-options"
+              />
+              <datalist id="company-options">
+                {companies.map(company => (
+                  <option key={company} value={company} />
+                ))}
+              </datalist>
               <button
                 type="button"
                 className="px-3 py-2 bg-gray-200 rounded text-gray-700 font-semibold"
                 onClick={handleCompanyAdd}
-                disabled={!companyInput}
+                disabled={!companyInput.trim()}
               >
                 추가
               </button>
@@ -372,25 +365,24 @@ export default function EditProfilePage() {
           <label className="w-24 text-gray-700 pt-2">선호직종</label>
           <div className="flex-1">
             <div className="flex gap-2 mb-2">
-              <select
+              <input
+                type="text"
                 value={jobInput}
                 onChange={e => setJobInput(e.target.value)}
                 className="border rounded px-3 py-2 flex-1"
-              >
-                <option value="">직종 선택</option>
-                {jobCategories
-                  .filter(j => !form.persona.job.includes(j.value))
-                  .map(job => (
-                    <option key={job.value} value={job.value}>
-                      {job.value}
-                    </option>
-                  ))}
-              </select>
+                placeholder="직종 입력"
+                list="job-options"
+              />
+              <datalist id="job-options">
+                {JOB_ROLES.filter(j => !form.persona.job.includes(j)).map(job => (
+                  <option key={job} value={job} />
+                ))}
+              </datalist>
               <button
                 type="button"
                 className="px-3 py-2 bg-gray-200 rounded text-gray-700 font-semibold"
                 onClick={handleJobAdd}
-                disabled={!jobInput}
+                disabled={!jobInput.trim()}
               >
                 추가
               </button>
@@ -448,7 +440,13 @@ export default function EditProfilePage() {
                 onChange={e => setTechInput(e.target.value)}
                 className="border rounded px-3 py-2 flex-1"
                 placeholder="기술스택 입력 후 추가"
+                list="tech-options"
               />
+              <datalist id="tech-options">
+                {TECH_STACKS.filter(t => !form.persona.techStack.includes(t)).map(tech => (
+                  <option key={tech} value={tech} />
+                ))}
+              </datalist>
               <button
                 type="button"
                 className="px-3 py-2 bg-gray-200 rounded text-gray-700 font-semibold"
