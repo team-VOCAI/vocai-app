@@ -136,6 +136,7 @@ model MockInterviewSession {
   sessionId  Int                    @id @default(autoincrement())
   profileId  Int
   title      String?
+  persona    Json?
   records    MockInterviewRecord[]
   summary      String?
   feedback     String?

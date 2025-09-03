@@ -2,8 +2,8 @@ import { genAI } from "@/lib/gemini";
 
 // Persona 타입 정의
 export type Persona = {
-  company: string;
-  job: string;
+  company: string[];
+  job: string[];
   careerLevel: string;
   difficulty: "쉬움" | "중간" | "어려움";
   techStack: string[];

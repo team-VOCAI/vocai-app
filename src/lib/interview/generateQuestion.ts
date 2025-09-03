@@ -12,13 +12,12 @@ export async function generateQuestion(sessionId: number): Promise<string> {
   // 2. 페르소나 정보 조회
   const session = await prisma.mockInterviewSession.findUnique({
     where: { sessionId },
-    include: { profile: true },
   });
 
-  if (!session || !session.profile.persona)
+  if (!session || !session.persona)
     throw new Error("페르소나가 설정되지 않았습니다.");
 
-  const rawPersona = session.profile.persona;
+  const rawPersona = session.persona;
   const persona =
     typeof rawPersona === "string" ? rawPersona : JSON.stringify(rawPersona);
   // 3. 질문/답변 이력 정리

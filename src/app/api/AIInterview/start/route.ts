@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     const session = await prisma.mockInterviewSession.create({
       data: {
         profileId: profile.profileId,
+        persona: profile.persona,
       },
     });
 
