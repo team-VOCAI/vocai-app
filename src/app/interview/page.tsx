@@ -4,6 +4,8 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useState, useEffect, ChangeEvent } from "react";
+import { companies } from "@/lib/constants/boards";
+import { TECH_STACKS, JOB_ROLES } from "@/lib/constants/persona";
 
 interface PersonaForm {
   company: string[];
@@ -60,8 +62,11 @@ export default function InterviewHomePage() {
 
   const addCompany = () => {
     const c = companyInput.trim();
-    if (c && !persona.company.includes(c)) {
+    const valid = /^[A-Za-z0-9가-힣\s]+$/.test(c);
+    if (c && valid && !persona.company.includes(c)) {
       setPersona((prev) => ({ ...prev, company: [...prev.company, c] }));
+    } else if (c && !valid) {
+      alert("회사명에는 특수문자를 사용할 수 없습니다.");
     }
     setCompanyInput("");
   };
@@ -72,7 +77,7 @@ export default function InterviewHomePage() {
 
   const addJob = () => {
     const j = jobInput.trim();
-    if (j && !persona.job.includes(j)) {
+    if (j && JOB_ROLES.includes(j) && !persona.job.includes(j)) {
       setPersona((prev) => ({ ...prev, job: [...prev.job, j] }));
     }
     setJobInput("");
@@ -84,7 +89,7 @@ export default function InterviewHomePage() {
 
   const addTech = () => {
     const t = techInput.trim();
-    if (t && !persona.techStack.includes(t)) {
+    if (t && TECH_STACKS.includes(t) && !persona.techStack.includes(t)) {
       setPersona((prev) => ({ ...prev, techStack: [...prev.techStack, t] }));
     }
     setTechInput("");
@@ -124,7 +129,13 @@ export default function InterviewHomePage() {
                       onChange={(e) => setCompanyInput(e.target.value)}
                       placeholder="회사"
                       className="border p-2 rounded flex-1"
+                      list="company-options"
                     />
+                    <datalist id="company-options">
+                      {companies.map((c) => (
+                        <option key={c} value={c} />
+                      ))}
+                    </datalist>
                     <button
                       type="button"
                       onClick={addCompany}
@@ -158,7 +169,13 @@ export default function InterviewHomePage() {
                       onChange={(e) => setJobInput(e.target.value)}
                       placeholder="직무"
                       className="border p-2 rounded flex-1"
+                      list="job-options"
                     />
+                    <datalist id="job-options">
+                      {JOB_ROLES.filter((role) => !persona.job.includes(role)).map((role) => (
+                        <option key={role} value={role} />
+                      ))}
+                    </datalist>
                     <button
                       type="button"
                       onClick={addJob}
@@ -209,7 +226,13 @@ export default function InterviewHomePage() {
                       onChange={(e) => setTechInput(e.target.value)}
                       placeholder="기술 스택"
                       className="border p-2 rounded flex-1"
+                      list="tech-options"
                     />
+                    <datalist id="tech-options">
+                      {TECH_STACKS.filter((t) => !persona.techStack.includes(t)).map((t) => (
+                        <option key={t} value={t} />
+                      ))}
+                    </datalist>
                     <button
                       type="button"
                       onClick={addTech}
