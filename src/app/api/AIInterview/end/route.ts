@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!profile.persona) {
+    if (!session.persona) {
       return NextResponse.json(
         { error: "페르소나가 설정되지 않았습니다." },
         { status: 400 }
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { summary, feedback } = await generateSessionSummary(
-      profile.persona as Persona,
+      session.persona as Persona,
       session.records
     );
 

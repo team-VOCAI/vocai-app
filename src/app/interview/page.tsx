@@ -6,21 +6,24 @@ import Navbar from "@/components/Navbar";
 import { useState, useEffect, ChangeEvent } from "react";
 
 interface PersonaForm {
-  company: string;
-  job: string;
+  company: string[];
+  job: string[];
   careerLevel: string;
   difficulty: "쉬움" | "중간" | "어려움";
-  techStack: string;
+  techStack: string[];
 }
 
 export default function InterviewHomePage() {
   const [persona, setPersona] = useState<PersonaForm>({
-    company: "",
-    job: "",
+    company: [],
+    job: [],
     careerLevel: "",
     difficulty: "쉬움",
-    techStack: "",
+    techStack: [],
   });
+  const [companyInput, setCompanyInput] = useState("");
+  const [jobInput, setJobInput] = useState("");
+  const [techInput, setTechInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [hasPersona, setHasPersona] = useState(false);
   const [editing, setEditing] = useState(true);
@@ -32,11 +35,11 @@ export default function InterviewHomePage() {
         const data = await res.json();
         if (data) {
           setPersona({
-            company: data.company ?? "",
-            job: data.job ?? "",
+            company: Array.isArray(data.company) ? data.company : [],
+            job: Array.isArray(data.job) ? data.job : [],
             careerLevel: data.careerLevel ?? "",
             difficulty: data.difficulty ?? "쉬움",
-            techStack: (data.techStack ?? []).join(", "),
+            techStack: Array.isArray(data.techStack) ? data.techStack : [],
           });
           setHasPersona(true);
           setEditing(false);
@@ -55,21 +58,48 @@ export default function InterviewHomePage() {
     setPersona((prev) => ({ ...prev, [name]: value }));
   };
 
+  const addCompany = () => {
+    const c = companyInput.trim();
+    if (c && !persona.company.includes(c)) {
+      setPersona((prev) => ({ ...prev, company: [...prev.company, c] }));
+    }
+    setCompanyInput("");
+  };
+
+  const removeCompany = (c: string) => {
+    setPersona((prev) => ({ ...prev, company: prev.company.filter((v) => v !== c) }));
+  };
+
+  const addJob = () => {
+    const j = jobInput.trim();
+    if (j && !persona.job.includes(j)) {
+      setPersona((prev) => ({ ...prev, job: [...prev.job, j] }));
+    }
+    setJobInput("");
+  };
+
+  const removeJob = (j: string) => {
+    setPersona((prev) => ({ ...prev, job: prev.job.filter((v) => v !== j) }));
+  };
+
+  const addTech = () => {
+    const t = techInput.trim();
+    if (t && !persona.techStack.includes(t)) {
+      setPersona((prev) => ({ ...prev, techStack: [...prev.techStack, t] }));
+    }
+    setTechInput("");
+  };
+
+  const removeTech = (t: string) => {
+    setPersona((prev) => ({ ...prev, techStack: prev.techStack.filter((v) => v !== t) }));
+  };
+
   const savePersona = async () => {
     setSaving(true);
     await fetch("/api/persona", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        company: persona.company,
-        job: persona.job,
-        careerLevel: persona.careerLevel,
-        difficulty: persona.difficulty,
-        techStack: persona.techStack
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-      }),
+      body: JSON.stringify(persona),
     });
     setSaving(false);
     setHasPersona(true);
@@ -86,45 +116,126 @@ export default function InterviewHomePage() {
           <h2 className="text-xl font-semibold mb-4">면접 페르소나 설정</h2>
           {editing ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  name="company"
-                  value={persona.company}
-                  onChange={handleChange}
-                  placeholder="회사"
-                  className="border p-2 rounded"
-                />
-                <input
-                  name="job"
-                  value={persona.job}
-                  onChange={handleChange}
-                  placeholder="직무"
-                  className="border p-2 rounded"
-                />
+              <div className="space-y-4">
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      value={companyInput}
+                      onChange={(e) => setCompanyInput(e.target.value)}
+                      placeholder="회사"
+                      className="border p-2 rounded flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={addCompany}
+                      className="px-3 py-2 border rounded"
+                    >
+                      추가
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {persona.company.map((c) => (
+                      <span
+                        key={c}
+                        className="px-2 py-1 bg-gray-200 rounded-full flex items-center"
+                      >
+                        {c}
+                        <button
+                          type="button"
+                          onClick={() => removeCompany(c)}
+                          className="ml-1 text-sm"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      value={jobInput}
+                      onChange={(e) => setJobInput(e.target.value)}
+                      placeholder="직무"
+                      className="border p-2 rounded flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={addJob}
+                      className="px-3 py-2 border rounded"
+                    >
+                      추가
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {persona.job.map((j) => (
+                      <span
+                        key={j}
+                        className="px-2 py-1 bg-gray-200 rounded-full flex items-center"
+                      >
+                        {j}
+                        <button
+                          type="button"
+                          onClick={() => removeJob(j)}
+                          className="ml-1 text-sm"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
                 <input
                   name="careerLevel"
                   value={persona.careerLevel}
                   onChange={handleChange}
                   placeholder="경력 수준"
-                  className="border p-2 rounded"
+                  className="border p-2 rounded w-full"
                 />
                 <select
                   name="difficulty"
                   value={persona.difficulty}
                   onChange={handleChange}
-                  className="border p-2 rounded"
+                  className="border p-2 rounded w-full"
                 >
                   <option value="쉬움">쉬움</option>
                   <option value="중간">중간</option>
                   <option value="어려움">어려움</option>
                 </select>
-                <input
-                  name="techStack"
-                  value={persona.techStack}
-                  onChange={handleChange}
-                  placeholder="기술 스택 (콤마로 구분)"
-                  className="border p-2 rounded md:col-span-2"
-                />
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      value={techInput}
+                      onChange={(e) => setTechInput(e.target.value)}
+                      placeholder="기술 스택"
+                      className="border p-2 rounded flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={addTech}
+                      className="px-3 py-2 border rounded"
+                    >
+                      추가
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {persona.techStack.map((t) => (
+                      <span
+                        key={t}
+                        className="px-2 py-1 bg-gray-200 rounded-full flex items-center"
+                      >
+                        {t}
+                        <button
+                          type="button"
+                          onClick={() => removeTech(t)}
+                          className="ml-1 text-sm"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className="mt-4 flex gap-2">
                 <button
@@ -147,11 +258,11 @@ export default function InterviewHomePage() {
           ) : hasPersona ? (
             <>
               <div className="space-y-2">
-                <p><strong>회사:</strong> {persona.company}</p>
-                <p><strong>직무:</strong> {persona.job}</p>
+                <p><strong>회사:</strong> {persona.company.join(', ')}</p>
+                <p><strong>직무:</strong> {persona.job.join(', ')}</p>
                 <p><strong>경력 수준:</strong> {persona.careerLevel}</p>
                 <p><strong>난이도:</strong> {persona.difficulty}</p>
-                <p><strong>기술 스택:</strong> {persona.techStack}</p>
+                <p><strong>기술 스택:</strong> {persona.techStack.join(', ')}</p>
               </div>
               <button
                 onClick={() => setEditing(true)}
