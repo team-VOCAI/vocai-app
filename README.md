@@ -34,3 +34,86 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+## Text-to-Speech
+
+
+This project can read interview questions aloud and transcribe spoken answers using the free [ElevenLabs](https://elevenlabs.io) API. To enable it, provide the following environment variables:
+
+
+```
+ELEVENLABS_API_KEY=your_api_key
+ELEVENLABS_VOICE_ID=optional_voice_id
+```
+
+
+Add these to your `.env.local` file during development or set them in your deployment environment. If they are not set, the application falls back to the browser's built-in `speechSynthesis` API and disables ElevenLabs speech-to-text transcription.
+
+
+
+
+```
+vocai-app
+├─ eslint.config.mjs
+├─ next.config.ts
+├─ package-lock.json
+├─ package.json
+├─ postcss.config.mjs
+├─ prisma
+│  ├─ migrations
+│  │  ├─ 20250617154633_init
+│  │  │  └─ migration.sql
+│  │  ├─ 20250618072854_init
+│  │  │  └─ migration.sql
+│  │  └─ migration_lock.toml
+│  └─ schema.prisma
+├─ public
+│  ├─ file.svg
+│  ├─ globe.svg
+│  ├─ next.svg
+│  ├─ vercel.svg
+│  └─ window.svg
+├─ README.md
+├─ src
+│  ├─ app
+│  │  ├─ api
+│  │  │  ├─ boards
+│  │  │  │  └─ [boardId]
+│  │  │  │     ├─ posts
+│  │  │  │     │  ├─ route.ts
+│  │  │  │     │  └─ [postId]
+│  │  │  │     │     ├─ increment-view
+│  │  │  │     │     │  └─ route.ts
+│  │  │  │     │     └─ route.ts
+│  │  │  │     └─ seaarch
+│  │  │  │        └─ route.ts
+│  │  │  └─ comments
+│  │  │     ├─ route.ts
+│  │  │     └─ [commentId]
+│  │  │        └─ route.ts
+│  │  ├─ boards
+│  │  │  └─ [boardId]
+│  │  │     ├─ new
+│  │  │     │  └─ page.tsx
+│  │  │     ├─ page.tsx
+│  │  │     └─ [postId]
+│  │  │        └─ page.tsx
+│  │  ├─ favicon.ico
+│  │  ├─ globals.css
+│  │  ├─ layout.tsx
+│  │  ├─ not-found.tsx
+│  │  ├─ page.tsx
+│  │  ├─ signin
+│  │  │  └─ page.tsx
+│  │  └─ signup
+│  │     └─ page.tsx
+│  ├─ components
+│  │  ├─ ContainerX.tsx
+│  │  └─ Navbar.tsx
+│  ├─ generated
+│  └─ lib
+│     └─ prisma.ts
+└─ tsconfig.json
+
+```
