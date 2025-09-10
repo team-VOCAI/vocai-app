@@ -89,6 +89,13 @@ npm start
 npm run lint
 ```
 
+### 8. Docker Compose 실행
+Docker와 Docker Compose가 설치되어 있다면 다음 명령으로 애플리케이션과 PostgreSQL을 컨테이너로 실행할 수 있습니다.
+```bash
+docker-compose up -d
+```
+컨테이너 실행 후 <http://localhost:3000>으로 접속합니다.
+
 ## 텍스트-음성 변환 설정
 
 `ELEVENLABS_API_KEY`와 `ELEVENLABS_VOICE_ID`가 설정되면 ElevenLabs API를 사용하여 면접 질문을 음성으로 출력합니다. 환경 변수가 없으면 브라우저의 `speechSynthesis` API로 대체되며, 음성 인식(STT) 기능은 비활성화됩니다.
