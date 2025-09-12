@@ -38,6 +38,9 @@
     "validator": "^13.15.15",
     "zod": "^4.0.5"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",

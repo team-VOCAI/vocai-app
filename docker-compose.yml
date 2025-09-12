@@ -1,11 +1,4 @@
 services:
-  web:
-    build: .
-    ports:
-      - "3000:3000"
-    env_file: .env
-    depends_on:
-      - db
   db:
     image: postgres:16-alpine
     environment:
@@ -14,5 +7,42 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  # 마이그레이션 전용 컨테이너 (빌더 스테이지에 있는 prisma CLI 사용)
+  migrate:
+    build:
+      context: .
+      target: builder          # Dockerfile의 builder 스테이지 사용 (dev deps 포함)
+      args:
+        GEMINI_API_KEY: ${GEMINI_API_KEY}
+    env_file: .env
+    command: sh -c "npx prisma migrate deploy"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build:
+      context: .
+      target: runtime          # Dockerfile의 runtime 스테이지 사용
+      args:
+        GEMINI_API_KEY: ${GEMINI_API_KEY}
+    ports:
+      - "3000:3000"
+    env_file: .env
+    # DATABASE_URL은 컨테이너 네트워크 기준으로 db를 가리켜야 함
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
 volumes:
   pgdata:
