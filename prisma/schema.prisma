@@ -1,15 +1,158 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  userId        Int       @id @default(autoincrement())
+  loginId       String?   @unique
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  name          String?
+  accounts      Account[]
+  profile       Profile?
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Profile {
+  profileId Int       @id @default(autoincrement())
+  userId    Int       @unique
+  nickName  String    @unique
+  name      String
+  phoneNum  String
+  email     String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  persona   Json?
+  comments  Comment[]
+  posts     Post[]
+  user      User      @relation(fields: [userId], references: [userId])
+
+  @@map("profiles")
+  MockInterviewSession MockInterviewSession[]
+}
+
+model Board {
+  boardId  Int     @id @default(autoincrement())
+  name     String
+  isActive Boolean @default(true)
+  posts    Post[]
+
+  @@map("boards")
+}
+
+model Post {
+  postId      Int          @id @default(autoincrement())
+  profileId   Int
+  boardId     Int
+  nickName    String
+  title       String
+  content     String
+  view        Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  company     String?
+  jobCategory String?
+  tags        String?
+  attachments Attachment[]
+  comments    Comment[]
+  board       Board        @relation(fields: [boardId], references: [boardId])
+  profile     Profile      @relation(fields: [profileId], references: [profileId])
+
+  @@map("posts")
+}
+
+model Comment {
+  commentId Int       @id @default(autoincrement())
+  postId    Int
+  profileId Int
+  nickName  String
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  post      Post      @relation(fields: [postId], references: [postId])
+  profile   Profile   @relation(fields: [profileId], references: [profileId])
+
+  @@map("comments")
+}
+
+model Attachment {
+  attachmentId String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  fileData     Bytes
+  fileName     String
+  fileSize     Int
+  fileType     String
+  postId       Int
+  post         Post     @relation(fields: [postId], references: [postId])
+
+  @@map("attachments")
+}
+
+model MockInterviewSession {
+  sessionId  Int                    @id @default(autoincrement())
+  profileId  Int
+  title      String?
+  persona    Json?
+  records    MockInterviewRecord[]
+  summary      String?
+  feedback     String?
+  createdAt    DateTime              @default(now())
+  deletedAt    DateTime?
+  profile    Profile               @relation(fields: [profileId], references: [profileId], onDelete: Cascade)
+}
+
+model MockInterviewRecord {
+  interviewId  Int                  @id @default(autoincrement())
+  sessionId    Int
+  question     String
+  answerText   String?
+  summary      String?
+  feedback     String?
+  createdAt    DateTime            @default(now())
+  deletedAt    DateTime?
+  session      MockInterviewSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
 }
