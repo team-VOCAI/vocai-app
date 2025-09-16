@@ -89,7 +89,11 @@ npm start
 npm run lint
 ```
 
-### 8. Docker Compose 실행
+### 8. API 문서 (Swagger)
+
+API 스키마는 `/api/swagger` 엔드포인트에서 OpenAPI 3.1 JSON으로 제공됩니다. 브라우저에서 상호작용형 문서를 확인하려면 개발 서버를 실행한 뒤 <http://localhost:3000/api-docs>로 접속하세요.
+
+### 9. Docker Compose 실행
 Docker와 Docker Compose가 설치되어 있다면 다음 명령으로 애플리케이션과 PostgreSQL을 컨테이너로 실행할 수 있습니다.
 ```bash
 docker-compose up -d

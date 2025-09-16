@@ -10,6 +10,7 @@ import ContainerX from '@/components/ContainerX';
 import { signinSchema, type SigninFormData } from '@/lib/schemas/auth';
 import { authAPI, ApiError } from '@/lib/api';
 import { redirectAfterLogin, setRedirectUrl } from '@/lib/redirect';
+import Image from 'next/image';
 
 // 선택: 이 페이지는 정적 생성하지 않도록 (프리렌더 이슈 회피)
 export const dynamic = 'force-dynamic';
@@ -162,7 +163,7 @@ function SignInBody() {
               }`}
               style={{ fontFamily: 'Roboto, Arial, sans-serif', fontWeight: 500 }}
             >
-              <img
+              <Image
                 src='https://developers.google.com/identity/images/g-logo.png'
                 alt='Google Logo'
                 className='w-5 h-5 mr-2'
