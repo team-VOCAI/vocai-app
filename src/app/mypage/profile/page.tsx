@@ -3,22 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { userAPI } from '@/lib/api';
+import type { PersonaData, UserProfileResponse } from '@/lib/api';
 import { HiUser, HiPencilSquare } from 'react-icons/hi2';
-
-type Persona = {
-  company: string;
-  job: string;
-  careerLevel: string;
-  difficulty: '쉬움' | '중간' | '어려움';
-  techStack: string[];
-};
 
 interface UserProfile {
   email?: string;
   name?: string;
   nickName?: string;
   phone?: string;
-  persona?: Persona;
+  persona?: PersonaData | null;
 }
 
 export default function MyProfilePage() {
@@ -29,13 +22,14 @@ export default function MyProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await userAPI.getMe() as { data: { email: string; profile?: any } };
+        const res = await userAPI.getMe();
+        const profileData: UserProfileResponse['profile'] = res.data.profile;
         setProfile({
           email: res.data.email,
-          name: res.data.profile?.name ?? '',
-          nickName: res.data.profile?.nickName ?? '',
-          phone: res.data.profile?.phoneNum ?? '',
-          persona: res.data.profile?.persona ?? undefined,
+          name: profileData.name ?? '',
+          nickName: profileData.nickName ?? '',
+          phone: profileData.phoneNum ?? '',
+          persona: profileData.persona ?? null,
         });
       } catch {
         setProfile(null);

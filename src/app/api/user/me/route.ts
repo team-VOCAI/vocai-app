@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import jwt from 'jsonwebtoken';
+import { verifyJwt } from '@/lib/verifyJwt';
 
 export async function GET(req: NextRequest) {
   // 1. 쿠키에서 token 읽기
@@ -9,10 +9,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: '토큰 필요' }, { status: 401 });
   }
 
-  let decoded: any;
-  try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET!);
-  } catch {
+  const decoded = verifyJwt(token);
+  if (!decoded) {
     return NextResponse.json({ error: '유효하지 않은 토큰' }, { status: 401 });
   }
 
@@ -53,10 +51,8 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: '토큰 필요' }, { status: 401 });
   }
 
-  let decoded: any;
-  try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET!);
-  } catch {
+  const decoded = verifyJwt(token);
+  if (!decoded) {
     return NextResponse.json({ error: '유효하지 않은 토큰' }, { status: 401 });
   }
 
@@ -84,7 +80,7 @@ export async function PATCH(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: '업데이트 실패' }, { status: 500 });
   }
 }

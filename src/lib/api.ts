@@ -38,6 +38,27 @@ export interface SigninData {
   password: string;
 }
 
+export interface PersonaData {
+  company: string[];
+  job: string[];
+  careerLevel: string;
+  difficulty: '쉬움' | '중간' | '어려움';
+  techStack: string[];
+}
+
+export interface UserProfileResponse {
+  userId: number;
+  email: string;
+  createdAt: string;
+  profile: {
+    profileId: number;
+    name: string;
+    nickName: string;
+    phoneNum: string;
+    persona: PersonaData | null;
+  };
+}
+
 // 중복확인 응답 타입
 export interface DuplicateCheckResponse {
   available: boolean;
@@ -259,14 +280,19 @@ export const userAPI = {
     return apiClient.get('/user/profile');
   },
   getMe: async () => {
-    return apiClient.get('/user/me');
+    return apiClient.get<UserProfileResponse>('/user/me');
   },
-  updateMe: async (data: { name: string; nickName: string; phone: string, persona: any }) => {
+  updateMe: async (data: {
+    name: string;
+    nickName: string;
+    phone: string;
+    persona?: PersonaData | null;
+  }) => {
     return apiClient.patch('/user/me', {
       name: data.name,
       nickName: data.nickName,
       phone: data.phone.replace(/\D/g, ''),
-      persona: data.persona,
+      persona: data.persona ?? null,
     });
   },
   // 내가 쓴 게시글 목록 조회
