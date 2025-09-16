@@ -2,36 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { userAPI } from '@/lib/api';
-import { authAPI } from '@/lib/api';
+import { userAPI, authAPI } from '@/lib/api';
+import type { PersonaData, UserProfileResponse } from '@/lib/api';
 import { HiUser, HiPencilSquare } from 'react-icons/hi2';
 import { companies } from '@/lib/constants/boards';
 import { TECH_STACKS, JOB_ROLES } from '@/lib/constants/persona';
-
-type Persona = {
-  company: string[];
-  job: string[];
-  careerLevel: string;
-  difficulty: '쉬움' | '중간' | '어려움';
-  techStack: string[];
-};
 
 interface UserProfile {
   email?: string;
   name?: string;
   nickName?: string;
   phone?: string;
-  persona?: Persona;
-}
-
-interface GetMeResponse {
-  email: string;
-  profile?: {
-    name?: string;
-    nickName?: string;
-    phoneNum?: string;
-    persona?: Persona;
-  };
+  persona?: PersonaData;
 }
 
 export default function EditProfilePage() {
@@ -66,13 +48,14 @@ export default function EditProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await userAPI.getMe() as { data: GetMeResponse };
+        const res = await userAPI.getMe();
+        const profileData: UserProfileResponse['profile'] = res.data.profile;
         setProfile({
           email: res.data.email,
-          name: res.data.profile?.name ?? '',
-          nickName: res.data.profile?.nickName ?? '',
-          phone: res.data.profile?.phoneNum ?? '',
-          persona: res.data.profile?.persona ?? {
+          name: profileData.name ?? '',
+          nickName: profileData.nickName ?? '',
+          phone: profileData.phoneNum ?? '',
+          persona: profileData.persona ?? {
             company: [],
             job: [],
             careerLevel: '',
@@ -81,15 +64,15 @@ export default function EditProfilePage() {
           },
         });
         setForm({
-          name: res.data.profile?.name ?? '',
-          nickName: res.data.profile?.nickName ?? '',
-          phone: res.data.profile?.phoneNum ?? '',
+          name: profileData.name ?? '',
+          nickName: profileData.nickName ?? '',
+          phone: profileData.phoneNum ?? '',
           persona: {
-            company: res.data.profile?.persona?.company ?? [],
-            job: res.data.profile?.persona?.job ?? [],
-            careerLevel: res.data.profile?.persona?.careerLevel ?? '',
-            difficulty: res.data.profile?.persona?.difficulty ?? '쉬움',
-            techStack: res.data.profile?.persona?.techStack ?? [],
+            company: profileData.persona?.company ?? [],
+            job: profileData.persona?.job ?? [],
+            careerLevel: profileData.persona?.careerLevel ?? '',
+            difficulty: profileData.persona?.difficulty ?? '쉬움',
+            techStack: profileData.persona?.techStack ?? [],
           },
         });
       } catch {
@@ -104,7 +87,7 @@ export default function EditProfilePage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name.startsWith('persona.')) {
-      const key = name.replace('persona.', '') as keyof Persona;
+      const key = name.replace('persona.', '') as keyof PersonaData;
       setForm(prev => ({
         ...prev,
         persona: {
